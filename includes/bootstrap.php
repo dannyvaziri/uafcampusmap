@@ -7,6 +7,57 @@ function uaf_read_json(string $path, mixed $fallback = []): mixed {
     return $value ?? $fallback;
 }
 
+function uaf_valid_coordinate(mixed $pair): bool {
+    return is_array($pair)
+        && count($pair) >= 2
+        && is_numeric($pair[0])
+        && is_numeric($pair[1])
+        && (float) $pair[0] >= -180
+        && (float) $pair[0] <= 180
+        && (float) $pair[1] >= -90
+        && (float) $pair[1] <= 90;
+}
+
+function uaf_valid_geometry(mixed $feature): bool {
+    if (!is_array($feature) || !is_array($feature['geometry'] ?? null)) return false;
+    $geometry = $feature['geometry'];
+    $type = (string) ($geometry['type'] ?? '');
+    $coords = $geometry['coordinates'] ?? null;
+    if ($type === 'Point') return uaf_valid_coordinate($coords);
+    if ($type === 'LineString' && is_array($coords) && count($coords) >= 2) {
+        foreach ($coords as $pair) if (!uaf_valid_coordinate($pair)) return false;
+        $unique = array_unique(array_map(static fn($pair) => implode(',', $pair), $coords));
+        return count($unique) >= 2;
+    }
+    if ($type === 'Polygon' && is_array($coords) && is_array($coords[0] ?? null) && count($coords[0]) >= 4) {
+        foreach ($coords[0] as $pair) if (!uaf_valid_coordinate($pair)) return false;
+        $unique = array_unique(array_map(static fn($pair) => implode(',', $pair), $coords[0]));
+        return count($unique) >= 3;
+    }
+    return false;
+}
+
+function uaf_sanitize_config(mixed $input): array {
+    $config = is_array($input) ? $input : [];
+    $config['buildingOverrides'] = is_array($config['buildingOverrides'] ?? null) ? $config['buildingOverrides'] : [];
+    $config['parkingOverrides'] = is_array($config['parkingOverrides'] ?? null) ? $config['parkingOverrides'] : [];
+    $config['customBuildings'] = is_array($config['customBuildings'] ?? null) ? $config['customBuildings'] : [];
+    $config['customParking'] = is_array($config['customParking'] ?? null) ? $config['customParking'] : [];
+    $config['contentOverrides'] = is_array($config['contentOverrides'] ?? null) ? $config['contentOverrides'] : [];
+    $config['imageOverlays'] = is_array($config['imageOverlays'] ?? null) ? $config['imageOverlays'] : [];
+    $shapes = is_array($config['shapes'] ?? null) ? $config['shapes'] : [];
+    $cleanShapes = [];
+    foreach ($shapes as $shape) {
+        if (!uaf_valid_geometry($shape)) continue;
+        if (isset($shape['properties']['building_id']) && $shape['properties']['building_id'] !== '' && isset($shape['properties']['parking_id'])) {
+            unset($shape['properties']['parking_id']);
+        }
+        $cleanShapes[] = $shape;
+    }
+    $config['shapes'] = $cleanShapes;
+    return $config;
+}
+
 $uafRoot = dirname(__DIR__);
 $buildings = [];
 foreach (glob($uafRoot . '/data/buildings-*.json') ?: [] as $file) {
@@ -19,7 +70,7 @@ foreach (glob($uafRoot . '/data/parking-*.json') ?: [] as $file) {
     if (is_array($rows)) $parking = array_merge($parking, $rows);
 }
 $meta = uaf_read_json($uafRoot . '/data/meta.json', []);
-$config = uaf_read_json($uafRoot . '/data/map-config.json', uaf_read_json($uafRoot . '/public/map-config.json', []));
+$config = uaf_sanitize_config(uaf_read_json($uafRoot . '/data/map-config.json', uaf_read_json($uafRoot . '/public/map-config.json', [])));
 
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $page = match (true) {
