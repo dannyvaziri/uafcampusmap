@@ -1,4 +1,4 @@
-name: Build check
+name: PHP vanilla map checks
 
 on:
   push:
@@ -7,18 +7,14 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Use Node 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install dependencies
-        run: npm install
-      - name: Verify data and controls
-        run: npm run verify
-      - name: Build
-        run: npm run build
+      - name: Validate PHP entry point
+        run: php -l index.php
+      - name: Validate browser JavaScript
+        run: node --check app.js
+      - name: Check required routes and assets
+        run: test -f .htaccess && test -f omni.css && test -f public/uaf-logo.svg
