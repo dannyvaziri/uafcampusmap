@@ -22,7 +22,7 @@ $page = ($path === '/admin' || str_ends_with($path, '/admin/index.php')) ? 'admi
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#236192"><title>Campus Map | University of Alaska Fairbanks</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<link rel="stylesheet" href="/assets/css/omni.css?v=20260902-2">
+<link rel="stylesheet" href="/assets/css/omni.css?v=20260902-3">
 </head>
 <body data-page="<?= htmlspecialchars($page, ENT_QUOTES) ?>">
 <a class="skip" href="#main">Skip to main content</a>
@@ -32,5 +32,5 @@ $page = ($path === '/admin' || str_ends_with($path, '/admin/index.php')) ? 'admi
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@3.0.2/dist/jspdf.umd.min.js"></script>
-<script src="/assets/js/app.js?v=20260902-2"></script>
+<script src="/assets/js/app.js?v=20260902-3"></script>
 </body></html>
