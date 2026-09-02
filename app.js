@@ -17,8 +17,8 @@
   const mapBounds = () => L.latLngBounds(data.buildings.filter(exact).map(b => [Number(b.latitude), Number(b.longitude)]));
   function addBasemap(map) {
     const key = settings.map?.arcgisApiKey;
-    const url = key ? 'https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}?token='+encodeURIComponent(key) : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-    L.tileLayer(url, { maxZoom:20, attribution:key?'© Esri, HERE, Garmin, USGS, EPA, NPS, © OpenStreetMap contributors':'© OpenStreetMap contributors' }).addTo(map);
+    const url = key ? 'https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}?token='+encodeURIComponent(key) : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    L.tileLayer(url, { maxZoom:20, attribution:key?'© Esri, Maxar, Earthstar Geographics, and the GIS User Community':'© OpenStreetMap contributors' }).addTo(map);
   }
   function shell(title, body) { app.innerHTML = `<main id="main" class="page"><p class="eyebrow">UAF CAMPUS MAP</p><h1>${esc(title)}</h1>${body}</main>`; }
   function card(item, kind) { const name = kind === 'building' ? item.common_name : `${item.code} — ${item.name}`; const detail = kind === 'building' ? (item.address || 'Address pending') : (item.restrictions || 'Parking information'); return `<button class="card" data-id="${esc(item.id || item.code)}" data-kind="${kind}"><strong>${esc(name)}</strong><small>${esc(detail)}</small></button>`; }
