@@ -87,7 +87,7 @@ jobs:
           grep -Fq 'Publish to GitHub & live map' assets/js/app.js
           grep -Fq 'Map overlays & key' assets/js/overlay-manager.js
           grep -Fq 'parking_visitor_metered' data/legend.json
-          grep -Fq '^RewriteRule \^admin/overlays' .htaccess
+          grep -q '^RewriteRule \^admin/overlays' .htaccess
           echo 'OMNI/PHP runtime structure is present.'
 
       - name: Confirm runtime has no compiled-app entry point
