@@ -1,6 +1,0 @@
-{
-  "deployment": "hostinger",
-  "requested": "2026-09-02",
-  "source": "main",
-  "note": "PHP/Apache deployment: document root is repository root; no Node/Vite build."
-}
