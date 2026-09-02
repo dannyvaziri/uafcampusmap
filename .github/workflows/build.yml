@@ -2,7 +2,7 @@ name: PHP vanilla map checks
 
 on:
   push:
-    branches: [main, qa-php-map-20260902]
+    branches: [main, overlay-key-editor-20260902]
   pull_request:
     branches: [main]
 
@@ -20,6 +20,7 @@ jobs:
           php -l print.php
           php -l admin/index.php
           php -l admin/images.php
+          php -l admin/overlays.php
           for file in includes/*.php; do php -l "$file"; done
 
       - name: Validate JSON data
@@ -29,6 +30,8 @@ jobs:
       - name: Syntax-check vanilla browser JavaScript
         run: |
           node --check assets/js/app.js
+          node --check assets/js/legend.js
+          node --check assets/js/overlay-manager.js
           echo 'Vanilla browser JavaScript parses successfully; no install or build was run.'
 
       - name: Smoke-test PHP page rendering
@@ -37,13 +40,18 @@ jobs:
           REQUEST_URI=/accessible php index.php > /tmp/accessible.html
           REQUEST_URI=/admin php index.php > /tmp/admin.html
           REQUEST_URI=/admin/images php index.php > /tmp/images.html
+          REQUEST_URI=/admin/overlays php index.php > /tmp/overlays.html
           REQUEST_URI=/print php index.php > /tmp/print.html
           grep -Fq 'data-page="map"' /tmp/map.html
           grep -Fq 'data-page="accessible"' /tmp/accessible.html
           grep -Fq 'data-page="admin"' /tmp/admin.html
           grep -Fq 'data-page="images"' /tmp/images.html
+          grep -Fq 'data-page="overlays"' /tmp/overlays.html
           grep -Fq 'data-page="print"' /tmp/print.html
           grep -Fq 'leaflet.draw.js' /tmp/admin.html
+          grep -Fq 'leaflet.draw.js' /tmp/overlays.html
+          grep -Fq 'overlay-manager.js' /tmp/overlays.html
+          grep -Fq 'uaf-legend' /tmp/map.html
           grep -Fq 'jspdf' /tmp/print.html
           echo 'All PHP page shells rendered with the expected page mode and page-specific assets.'
 
@@ -56,19 +64,30 @@ jobs:
           test -f print.php
           test -f admin/index.php
           test -f admin/images.php
+          test -f admin/overlays.php
           test -f includes/bootstrap.php
           test -f includes/header.php
           test -f includes/footer.php
           test -f assets/css/omni.css
+          test -f assets/css/overlays.css
           test -f assets/js/app.js
+          test -f assets/js/legend.js
+          test -f assets/js/overlay-manager.js
           test -f assets/images/uaf-logo.svg
           test -f data/map-config.json
+          test -f data/legend.json
           grep -Fq 'assets/css/omni.css' index.php
+          grep -Fq 'assets/css/overlays.css' index.php
           grep -Fq 'assets/js/app.js' includes/footer.php
+          grep -Fq 'assets/js/legend.js' includes/footer.php
+          grep -Fq 'assets/js/overlay-manager.js' includes/footer.php
           grep -Fq 'leaflet.draw.js' includes/footer.php
           grep -Fq 'Save PDF' assets/js/app.js
           grep -Fq 'window.print()' assets/js/app.js
           grep -Fq 'Publish to GitHub & live map' assets/js/app.js
+          grep -Fq 'Map overlays & key' assets/js/overlay-manager.js
+          grep -Fq 'parking_visitor_metered' data/legend.json
+          grep -Fq '^RewriteRule \^admin/overlays' .htaccess
           echo 'OMNI/PHP runtime structure is present.'
 
       - name: Confirm runtime has no compiled-app entry point
