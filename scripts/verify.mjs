@@ -32,7 +32,9 @@ if(admin.includes('sessionStorage')&&!admin.includes("localStorage.setItem('uaf-
 if(admin.includes('BroadcastChannel')&&admin.includes('uaf-map-live-refresh')&&map.includes('uaf-map-live-refresh')&&map.includes("BroadcastChannel('uaf-map-live')"))ok('open public map tabs refresh after admin publish');else fail('live refresh channel is incomplete')
 if(runtime.includes('recentBrowserPublish')&&runtime.includes('uaf-map-live-config'))ok('freshly published browser config is available immediately');else fail('immediate published-config fallback is missing')
 if(map.includes('parking_id')&&map.includes('onParking'))ok('parking polygons open their parking record publicly');else fail('public parking geometry interaction missing')
-for(const template of ['visitor','full','accessibility','event','bw','directions'])print.includes(`${template}:`)?ok(`print template ${template} exists`):fail(`missing print template ${template}`)
+for(const item of ['Full campus','Selected area / current view','11×17','8.5×11','Building names','Parking','Map shapes','Print / Save'])print.includes(item)?ok(`print control "${item}" exists`):fail(`missing print control ${item}`)
+if(print.includes('openstreetmap.org')&&print.includes('print-building-label'))ok('print map uses detailed OpenStreetMap base with building labels');else fail('detailed printable base map or labels missing')
+if(print.includes('window.print()'))ok('Print / Save opens native browser print dialog');else fail('native print dialog action missing')
 if(accessible.includes('Text-only campus map')&&accessible.includes('Print directions'))ok('text-only map exposes destination and print actions');else fail('text-only map is missing essential actions')
 if(logo.length>5000&&!logo.includes('TRUNCATED')&&logo.includes('University of Alaska Fairbanks'))ok('official UAF logo asset is present and intact');else fail('UAF logo asset appears incomplete')
 const sourceFiles=['src/App.jsx','src/pages/MapPage.jsx','src/pages/AccessiblePage.jsx','src/pages/PrintPage.jsx','src/pages/AdminPage.jsx','src/components/InfoPanels.jsx','src/components/PlaceDialog.jsx']
