@@ -154,12 +154,13 @@
 
   function inferredShapeKey(feature) {
     const props = feature?.properties || {};
-    if (props.legend_key && legendById.has(props.legend_key)) return props.legend_key;
-    if (props.building_id || props.kind === 'building-footprint') return 'building';
-    if (props.parking_id || props.kind === 'parking-area') {
+    if (props.kind === 'building-footprint' || props.building_id) return 'building';
+    if (props.kind === 'parking-area' || props.parking_id) {
+      if (typeof props.legend_key === 'string' && props.legend_key.startsWith('parking_') && legendById.has(props.legend_key)) return props.legend_key;
       const row = parking().find(item => item.id === props.parking_id || item.code === props.parking_id);
       return parkingKey(row);
     }
+    if (props.legend_key && legendById.has(props.legend_key)) return props.legend_key;
     const map = {
       trail:'trail', construction:'construction', closure:'construction', stairs:'stairs', bridge:'bridge',
       'shuttle-stop':'shuttle_stop', 'macs-stop':'macs_stop', 'accessible-parking':'accessible_parking',
@@ -185,7 +186,11 @@
 
   function defaultKey() {
     if (state.scope === 'building') return 'building';
-    if (state.scope === 'parking') return parkingKey(currentRecord());
+    if (state.scope === 'parking') {
+      const shape = currentShape();
+      if (shape) return inferredShapeKey(shape);
+      return parkingKey(currentRecord());
+    }
     return currentShape() ? inferredShapeKey(currentShape()) : (state.legendKey || 'custom_area');
   }
 
@@ -276,7 +281,10 @@
       return buildings().map(item => ({kind:'building',id:item.id,title:item.common_name || item.official_name || item.id,subtitle:item.address || 'Address pending',record:item,shape:buildingShape(item.id),key:'building'})).filter(row => !q || normalize([row.title,row.subtitle,row.record.abbreviation,(row.record.services || []).join(' ')].join(' ')).includes(q));
     }
     if (state.scope === 'parking') {
-      return parking().map(item => ({kind:'parking',id:item.id || item.code,title:(item.code || 'P') + ' — ' + (item.name || 'Parking'),subtitle:item.restrictions || 'Parking information',record:item,shape:parkingShape(item.id,item.code),key:parkingKey(item)})).filter(row => !q || normalize([row.title,row.subtitle,row.record.type].join(' ')).includes(q));
+      return parking().map(item => {
+        const shape = parkingShape(item.id,item.code);
+        return {kind:'parking',id:item.id || item.code,title:(item.code || 'P') + ' — ' + (item.name || 'Parking'),subtitle:item.restrictions || 'Parking information',record:item,shape,key:shape ? inferredShapeKey(shape) : parkingKey(item)};
+      }).filter(row => !q || normalize([row.title,row.subtitle,row.record.type].join(' ')).includes(q));
     }
     return otherShapes().map(feature => ({kind:'other',id:feature.properties?.id,title:feature.properties?.name || feature.properties?.id || 'Map overlay',subtitle:styleFor(inferredShapeKey(feature)).label,record:null,shape:feature,key:inferredShapeKey(feature)})).filter(row => !q || normalize([row.title,row.subtitle].join(' ')).includes(q));
   }
@@ -335,7 +343,7 @@
     const record = currentRecord();
     const shape = currentShape();
     if (shape) {
-      const styled = applyLegend(shape, state.scope === 'parking' ? (shape.properties?.legend_key || parkingKey(record)) : inferredShapeKey(shape));
+      const styled = applyLegend(shape, inferredShapeKey(shape));
       const layerGroup = L.geoJSON(styled, {
         style:f => leafletStyle(f, false),
         pointToLayer:(f,ll) => L.circleMarker(ll,{radius:8,...leafletStyle(f,false),fillOpacity:0.9})
@@ -400,7 +408,10 @@
   }
 
   function keyOptions(selected) {
-    return legendItems.filter(item => item.geometry !== 'image').map(item => '<option value="' + esc(item.id) + '" ' + (item.id === selected ? 'selected' : '') + '>' + esc((item.group || 'Map') + ' — ' + item.label) + '</option>').join('');
+    let rows = legendItems.filter(item => item.geometry !== 'image');
+    if (state.scope === 'building') rows = rows.filter(item => item.id === 'building');
+    if (state.scope === 'parking') rows = rows.filter(item => item.id.startsWith('parking_'));
+    return rows.map(item => '<option value="' + esc(item.id) + '" ' + (item.id === selected ? 'selected' : '') + '>' + esc((item.group || 'Map') + ' — ' + item.label) + '</option>').join('');
   }
 
   function renderProperties() {
@@ -411,12 +422,12 @@
       holder.innerHTML = '<h3>Selected overlay</h3><p class="muted">Select an item to see its key type and geometry status.</p>';
       return;
     }
-    const key = shape?.properties?.legend_key || state.legendKey || defaultKey();
+    const key = state.scope === 'building' ? 'building' : (shape?.properties?.legend_key || state.legendKey || defaultKey());
     const entry = styleFor(key);
-    const name = shape?.properties?.name || (state.scope === 'building' ? (record?.common_name || record?.official_name || '') : state.scope === 'parking' ? ((record?.code || 'P') + ' — ' + (record?.name || 'Parking')) : state.pendingName || 'Map overlay');
+    const name = shape?.properties?.name || (state.scope === 'building' ? (record?.common_name || record?.official_name || '') + ' footprint' : state.scope === 'parking' ? ((record?.code || 'P') + ' — ' + (record?.name || 'Parking')) : state.pendingName || 'Map overlay');
     const lockedBuilding = state.scope === 'building';
     const warning = state.scope === 'parking' && normalize(record?.restrictions).includes(';') ? '<p class="overlay-warning">This parking record contains more than one rule. Choose the key style for this boundary, then create additional custom overlay segments if the lot needs to be split by rule.</p>' : '';
-    holder.innerHTML = '<h3>Selected overlay</h3><div class="selected-key-preview">' + swatch(entry) + '<strong>' + esc(entry.label) + '</strong></div><label class="admin-field"><span>Overlay name</span><input id="selected-overlay-name" value="' + esc(name) + '"></label><label class="admin-field"><span>Key type</span><select id="selected-overlay-key" ' + (lockedBuilding ? 'disabled' : '') + '>' + keyOptions(key) + '</select></label>' + (lockedBuilding ? '<p class="muted">Building footprints always use the Building key style.</p>' : '') + warning + '<label class="admin-switch"><input id="selected-overlay-visible" type="checkbox" ' + (shape?.properties?.visible !== false ? 'checked' : '') + ' ' + (!shape ? 'disabled' : '') + '><span>Show this overlay publicly</span></label><dl class="overlay-meta"><div><dt>Geometry</dt><dd>' + (shape ? esc(shape.geometry?.type || 'Mapped') : 'Needs outline') + '</dd></div><div><dt>Record</dt><dd>' + esc(state.scope === 'building' ? 'Building' : state.scope === 'parking' ? 'Parking' : 'Other feature') + '</dd></div></dl>';
+    holder.innerHTML = '<h3>Selected overlay</h3><div class="selected-key-preview">' + swatch(entry) + '<strong>' + esc(entry.label) + '</strong></div><label class="admin-field"><span>Overlay name</span><input id="selected-overlay-name" value="' + esc(name) + '"></label><label class="admin-field"><span>Key type</span><select id="selected-overlay-key" ' + (lockedBuilding ? 'disabled' : '') + '>' + keyOptions(key) + '</select></label>' + (lockedBuilding ? '<p class="muted">Building footprints always use the Building key style.</p>' : state.scope === 'parking' ? '<p class="muted">Parking boundaries can only use parking key styles.</p>' : '') + warning + '<label class="admin-switch"><input id="selected-overlay-visible" type="checkbox" ' + (shape?.properties?.visible !== false ? 'checked' : '') + ' ' + (!shape ? 'disabled' : '') + '><span>Show this overlay publicly</span></label><dl class="overlay-meta"><div><dt>Geometry</dt><dd>' + (shape ? esc(shape.geometry?.type || 'Mapped') : 'Needs outline') + '</dd></div><div><dt>Record</dt><dd>' + esc(state.scope === 'building' ? 'Building' : state.scope === 'parking' ? 'Parking' : 'Other feature') + '</dd></div></dl>';
     document.getElementById('selected-overlay-name').addEventListener('input', event => {
       if (shape) updateShape(shape.properties?.id,{name:event.target.value});
       else state.pendingName = event.target.value;
@@ -497,14 +508,13 @@
     state.selectedLayer.editing?.disable();
     const geo = state.selectedLayer.toGeoJSON();
     geo.properties = {...shape.properties};
-    const styled = applyLegend(geo, shape.properties?.legend_key || defaultKey());
+    const styled = applyLegend(geo, inferredShapeKey(shape));
     if (!validGeometry(styled)) {setStatus('The edited geometry is invalid. Add enough distinct points to form the shape.');return;}
     state.config.shapes = state.config.shapes.map(feature => feature.properties?.id === shape.properties?.id ? styled : feature);
     state.editing=false;renderSummary();renderInventory();renderSelection();setStatus('Geometry saved in the draft.');
   }
 
   function fitSelection() {
-    const shape = currentShape();
     if (state.selectedLayer) {
       if (typeof state.selectedLayer.getBounds === 'function') {
         const bounds = state.selectedLayer.getBounds();
@@ -533,16 +543,16 @@
 
   function setStatus(message) {document.getElementById('overlay-status').textContent = message || '';}
 
-  function saveDraft() {
-    const cleaned = canonicalConfig();
-    localStorage.setItem('uaf-map-config-draft',JSON.stringify({time:Date.now(),config:cleaned}));
-    setStatus('Overlay draft saved in this browser. It is not public yet.');
-  }
-
   function canonicalConfig() {
     const cfg = clone(state.config);
     cfg.shapes = cfg.shapes.filter(validGeometry).map(feature => applyLegend(feature,inferredShapeKey(feature)));
     return cfg;
+  }
+
+  function saveDraft() {
+    const cleaned = canonicalConfig();
+    localStorage.setItem('uaf-map-config-draft',JSON.stringify({time:Date.now(),config:cleaned}));
+    setStatus('Overlay draft saved in this browser. It is not public yet.');
   }
 
   async function publish() {
@@ -554,18 +564,18 @@
     const headers={Authorization:'Bearer '+token,Accept:'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'};
     try {
       const current = await fetch('https://api.github.com/repos/'+REPO+'/contents/'+CONFIG_PATH+'?ref=main',{headers});
-      if (!current.ok) throw new Error('Could not read the current map configuration ('+current.status+').');
+      if(!current.ok) throw new Error('Could not read the current map configuration ('+current.status+').');
       const currentJson = await current.json();
       const content = JSON.stringify(cfg,null,2)+'\n';
       const response = await fetch('https://api.github.com/repos/'+REPO+'/contents/'+CONFIG_PATH,{method:'PUT',headers,body:JSON.stringify({message:'Update UAF map overlays and key-linked geometry',content:encode64(content),sha:currentJson.sha,branch:'main'})});
-      if (!response.ok) {const detail=await response.json().catch(()=>({}));throw new Error(detail.message || ('GitHub publish failed ('+response.status+').'));}
+      if(!response.ok){const detail=await response.json().catch(()=>({}));throw new Error(detail.message || ('GitHub publish failed ('+response.status+').'));}
       const result=await response.json();
       const sha=result.commit?.sha || '';
       state.config=cfg;
       localStorage.setItem('uaf-map-live-config',JSON.stringify({time:Date.now(),config:cfg,sha}));
       localStorage.setItem('uaf-map-live-refresh',String(Date.now()));
       localStorage.removeItem('uaf-map-config-draft');
-      if ('BroadcastChannel' in window) {const channel=new BroadcastChannel('uaf-map-live');channel.postMessage({type:'published',sha});channel.close();}
+      if('BroadcastChannel' in window){const channel=new BroadcastChannel('uaf-map-live');channel.postMessage({type:'published',sha});channel.close();}
       setStatus('Published'+(sha?' ('+sha.slice(0,7)+')':'')+'. Hostinger can now deploy the updated overlay geometry from main.');
     } catch (error) {
       setStatus(error.message || 'Publishing failed.');
