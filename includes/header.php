@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 $navCurrent = static fn(string $target): string => $page === $target ? ' aria-current="page"' : '';
+$adminPages = ['admin', 'images', 'overlays'];
 ?>
 <a class="skip" href="#main">Skip to main content</a>
 <header class="site-header">
@@ -12,8 +13,9 @@ $navCurrent = static fn(string $target): string => $page === $target ? ' aria-cu
     <a href="/"<?= $navCurrent('map') ?>>Map</a>
     <a href="/accessible"<?= $navCurrent('accessible') ?>>Text map</a>
     <a href="/print"<?= $navCurrent('print') ?>>Print</a>
-    <?php if ($page === 'admin' || $page === 'images'): ?>
+    <?php if (in_array($page, $adminPages, true)): ?>
       <a href="/admin"<?= $navCurrent('admin') ?>>Admin</a>
+      <a href="/admin/overlays"<?= $navCurrent('overlays') ?>>Overlays & key</a>
       <a href="/admin/images"<?= $navCurrent('images') ?>>PNG overlays</a>
     <?php endif; ?>
   </nav>

@@ -1,0 +1,220 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "building",
+      "label": "Building",
+      "group": "Campus",
+      "geometry": "polygon",
+      "stroke": "#236192",
+      "fill": "#C4CFDA",
+      "weight": 2,
+      "opacity": 1,
+      "fillOpacity": 0.58
+    },
+    {
+      "id": "road_one_way",
+      "label": "One-way street",
+      "group": "Transportation",
+      "geometry": "line",
+      "stroke": "#66665D",
+      "fill": "#66665D",
+      "weight": 4,
+      "opacity": 0.95,
+      "fillOpacity": 0,
+      "dashArray": "10 7"
+    },
+    {
+      "id": "shuttle_stop",
+      "label": "Shuttle stop",
+      "group": "Transportation",
+      "geometry": "point",
+      "stroke": "#111C4E",
+      "fill": "#87D1E6",
+      "weight": 2,
+      "opacity": 1,
+      "fillOpacity": 0.95
+    },
+    {
+      "id": "macs_stop",
+      "label": "Borough bus stop (MACS)",
+      "group": "Transportation",
+      "geometry": "point",
+      "stroke": "#111C4E",
+      "fill": "#F6DFA4",
+      "weight": 2,
+      "opacity": 1,
+      "fillOpacity": 0.95
+    },
+    {
+      "id": "bridge",
+      "label": "Bridge",
+      "group": "Campus",
+      "geometry": "line",
+      "stroke": "#774D28",
+      "fill": "#774D28",
+      "weight": 5,
+      "opacity": 0.95,
+      "fillOpacity": 0
+    },
+    {
+      "id": "stairs",
+      "label": "Stairs",
+      "group": "Accessibility",
+      "geometry": "line",
+      "stroke": "#111C4E",
+      "fill": "#111C4E",
+      "weight": 4,
+      "opacity": 1,
+      "fillOpacity": 0,
+      "dashArray": "3 4"
+    },
+    {
+      "id": "trail",
+      "label": "Unpaved trail / path",
+      "group": "Transportation",
+      "geometry": "line",
+      "stroke": "#71984A",
+      "fill": "#71984A",
+      "weight": 4,
+      "opacity": 0.95,
+      "fillOpacity": 0,
+      "dashArray": "8 6"
+    },
+    {
+      "id": "parking_permit",
+      "label": "UAF decal, permit and pay-by-plate parking",
+      "group": "Parking",
+      "geometry": "polygon",
+      "stroke": "#236192",
+      "fill": "#FFCD00",
+      "weight": 2,
+      "opacity": 1,
+      "fillOpacity": 0.68
+    },
+    {
+      "id": "parking_short_term",
+      "label": "Pay-by-plate short-term parking only",
+      "group": "Parking",
+      "geometry": "polygon",
+      "stroke": "#236192",
+      "fill": "#87D1E6",
+      "weight": 2,
+      "opacity": 1,
+      "fillOpacity": 0.72
+    },
+    {
+      "id": "parking_visitor_only",
+      "label": "Visitors only, metered",
+      "group": "Parking",
+      "geometry": "polygon",
+      "stroke": "#111C4E",
+      "fill": "#F45197",
+      "weight": 2,
+      "opacity": 1,
+      "fillOpacity": 0.62
+    },
+    {
+      "id": "parking_visitor_metered",
+      "label": "Visitors and UAF-affiliated, metered",
+      "group": "Parking",
+      "geometry": "polygon",
+      "stroke": "#111C4E",
+      "fill": "#F6DFA4",
+      "weight": 2,
+      "opacity": 1,
+      "fillOpacity": 0.78
+    },
+    {
+      "id": "parking_gold",
+      "label": "Gold decal only",
+      "group": "Parking",
+      "geometry": "polygon",
+      "stroke": "#774D28",
+      "fill": "#FFCD00",
+      "weight": 3,
+      "opacity": 1,
+      "fillOpacity": 0.88
+    },
+    {
+      "id": "parking_restricted",
+      "label": "Restricted parking / no parking",
+      "group": "Parking",
+      "geometry": "polygon",
+      "stroke": "#111C4E",
+      "fill": "#DF6A2E",
+      "weight": 3,
+      "opacity": 1,
+      "fillOpacity": 0.62,
+      "dashArray": "7 5"
+    },
+    {
+      "id": "parking_no_parking",
+      "label": "No parking unless otherwise posted",
+      "group": "Parking",
+      "geometry": "polygon",
+      "stroke": "#DF6A2E",
+      "fill": "#C8C8C8",
+      "weight": 3,
+      "opacity": 1,
+      "fillOpacity": 0.52,
+      "dashArray": "4 4"
+    },
+    {
+      "id": "parking_kiosk",
+      "label": "Parking permit kiosk",
+      "group": "Parking",
+      "geometry": "point",
+      "stroke": "#111C4E",
+      "fill": "#FFCD00",
+      "weight": 2,
+      "opacity": 1,
+      "fillOpacity": 1
+    },
+    {
+      "id": "accessible_parking",
+      "label": "Accessible / handicap parking",
+      "group": "Accessibility",
+      "geometry": "point",
+      "stroke": "#FFFFFF",
+      "fill": "#111C4E",
+      "weight": 2,
+      "opacity": 1,
+      "fillOpacity": 1
+    },
+    {
+      "id": "construction",
+      "label": "Construction / closure",
+      "group": "Updates",
+      "geometry": "polygon",
+      "stroke": "#DF6A2E",
+      "fill": "#DF6A2E",
+      "weight": 3,
+      "opacity": 1,
+      "fillOpacity": 0.25,
+      "dashArray": "8 5"
+    },
+    {
+      "id": "custom_area",
+      "label": "Other mapped area / feature",
+      "group": "Campus",
+      "geometry": "polygon",
+      "stroke": "#774D28",
+      "fill": "#F6DFA4",
+      "weight": 2,
+      "opacity": 0.95,
+      "fillOpacity": 0.3
+    },
+    {
+      "id": "png",
+      "label": "PNG image overlay",
+      "group": "Campus",
+      "geometry": "image",
+      "stroke": "#66665D",
+      "fill": "#C4CFDA",
+      "weight": 1,
+      "opacity": 0.9,
+      "fillOpacity": 0.45
+    }
+  ]
+}
