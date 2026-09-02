@@ -4,6 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
 import './styles.css'
 import App from './App.jsx'
+import {applyMapConfig,loadPublishedConfig} from './data/runtime.js'
+
+const config=await loadPublishedConfig()
+applyMapConfig(config)
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
