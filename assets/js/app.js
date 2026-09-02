@@ -13,7 +13,7 @@
   document.documentElement.style.setProperty('--blue', colors.blue || '#236192');
   document.documentElement.style.setProperty('--gold', colors.gold || '#FFCD00');
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
-  const exact = b => Number.isFinite(Number(b.latitude)) && Number.isFinite(Number(b.longitude));
+  const exact = b => b.latitude !== null && b.latitude !== '' && b.longitude !== null && b.longitude !== '' && Number.isFinite(Number(b.latitude)) && Number.isFinite(Number(b.longitude));
   const mapBounds = () => L.latLngBounds(data.buildings.filter(exact).map(b => [Number(b.latitude), Number(b.longitude)]));
   function addBasemap(map) {
     const key = settings.map?.arcgisApiKey;
