@@ -11,6 +11,7 @@ $mapPages = ['map', 'admin', 'images', 'overlays', 'print'];
 </footer>
 <?php if (in_array($page, $mapPages, true)): ?>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="/assets/js/basemap.js?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>"></script>
 <?php endif; ?>
 <?php if ($page === 'admin' || $page === 'overlays'): ?>
 <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js" crossorigin=""></script>

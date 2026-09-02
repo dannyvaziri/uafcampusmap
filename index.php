@@ -20,6 +20,7 @@ require __DIR__ . '/includes/bootstrap.php';
 <?php endif; ?>
 <link rel="stylesheet" href="/assets/css/omni.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
 <link rel="stylesheet" href="/assets/css/overlays.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
+<link rel="stylesheet" href="/assets/css/basemap.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
 </head>
 <body data-page="<?= htmlspecialchars($page, ENT_QUOTES) ?>">
 <?php require __DIR__ . '/includes/header.php'; ?>
