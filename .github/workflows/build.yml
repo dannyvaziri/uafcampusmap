@@ -26,6 +26,27 @@ jobs:
         run: |
           php -r '$files = glob("data/*.json"); foreach ($files as $file) { json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR); echo "valid $file\n"; }'
 
+      - name: Syntax-check vanilla browser JavaScript
+        run: |
+          node --check assets/js/app.js
+          echo 'Vanilla browser JavaScript parses successfully; no install or build was run.'
+
+      - name: Smoke-test PHP page rendering
+        run: |
+          REQUEST_URI=/ php index.php > /tmp/map.html
+          REQUEST_URI=/accessible php index.php > /tmp/accessible.html
+          REQUEST_URI=/admin php index.php > /tmp/admin.html
+          REQUEST_URI=/admin/images php index.php > /tmp/images.html
+          REQUEST_URI=/print php index.php > /tmp/print.html
+          grep -Fq 'data-page="map"' /tmp/map.html
+          grep -Fq 'data-page="accessible"' /tmp/accessible.html
+          grep -Fq 'data-page="admin"' /tmp/admin.html
+          grep -Fq 'data-page="images"' /tmp/images.html
+          grep -Fq 'data-page="print"' /tmp/print.html
+          grep -Fq 'leaflet.draw.js' /tmp/admin.html
+          grep -Fq 'jspdf' /tmp/print.html
+          echo 'All PHP page shells rendered with the expected page mode and page-specific assets.'
+
       - name: Check OMNI runtime structure
         run: |
           set -e
