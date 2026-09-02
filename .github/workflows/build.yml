@@ -27,6 +27,32 @@ jobs:
         run: |
           php -r '$files = glob("data/*.json"); foreach ($files as $file) { json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR); echo "valid $file\n"; }'
 
+      - name: Validate overlay inventory and key model
+        run: |
+          php -r '
+            $_SERVER["REQUEST_URI"] = "/admin/overlays";
+            require "includes/bootstrap.php";
+            if (count($buildings) !== 67) throw new RuntimeException("Expected 67 base buildings");
+            if (count($parking) !== 62) throw new RuntimeException("Expected 62 base parking records");
+            $index = uaf_legend_index($legend);
+            if (count($index) < 10) throw new RuntimeException("Map key is unexpectedly incomplete");
+            foreach ($parking as $row) {
+              $key = uaf_parking_legend_key($row);
+              if (!isset($index[$key])) throw new RuntimeException("Parking key mapping is missing: " . $key);
+            }
+            foreach (($config["shapes"] ?? []) as $shape) {
+              $key = uaf_infer_legend_key($shape, $index, $parking);
+              if (!isset($index[$key])) throw new RuntimeException("Shape key is missing: " . $key);
+              $styled = uaf_apply_legend_style($shape, $index, $parking);
+              foreach (["stroke", "fill", "weight", "opacity", "fillOpacity"] as $prop) {
+                if (array_key_exists($prop, $index[$key]) && ($styled["properties"][$prop] ?? null) != $index[$key][$prop]) throw new RuntimeException("Shape style does not match key: " . $prop);
+              }
+              if (!empty($shape["properties"]["building_id"]) && $key !== "building") throw new RuntimeException("Building overlay is not using the Building key");
+              if (!empty($shape["properties"]["parking_id"]) && !str_starts_with($key, "parking_")) throw new RuntimeException("Parking overlay is outside the parking key family");
+            }
+            echo "Overlay inventory/key model valid: 67 buildings, 62 parking records, " . count($index) . " key styles.\n";
+          '
+
       - name: Syntax-check vanilla browser JavaScript
         run: |
           node --check assets/js/app.js
