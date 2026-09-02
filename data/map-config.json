@@ -1,0 +1,203 @@
+{
+  "version": 2,
+  "settings": {
+    "siteTitle": "University of Alaska Fairbanks",
+    "siteSubtitle": "Campus Map",
+    "pilotTitle": "Public pilot.",
+    "pilotNotice": "Campus walking and accessible routes are not yet turn-by-turn. Use posted campus signage and current UAF accessibility resources for verified accessible-route information. Parking enforcement boundaries and construction detours are not authoritative until UAF GIS or operational feeds are added.",
+    "colors": {
+      "blue": "#236192",
+      "gold": "#FFCD00",
+      "marker": "#236192",
+      "parking": "#71984A",
+      "access": "#111C4E",
+      "trail": "#71984A",
+      "closure": "#DF6A2E"
+    },
+    "map": {
+      "center": [
+        64.857,
+        -147.829
+      ],
+      "zoom": 16,
+      "arcgisApiKey": "AAPTaiYnIt8ZRIUv1khCediU4Qg..GI_aIpqs4zw3J_oMtUppS0H7i0fpTElcHSlPKqJmNlYPNqxMpxGms9Q-0hX7FfRMyi97Ed4hjBa4mMFMtq_e9PclX8Uixdl7ZUu3c5wXjLXk5w73xinDU2auZhA1Wiz4NToHgDBgNx5_tqzk9L-e_fe-uQepcrmwaK9rQ7YK289SnyPy_EoypRwm9jqmxSinKCTOlccq_KaJDU73dq18Z6SobxmpedISRD1YVOPjXgNSQ7G88YYSvQeDk4Q.AT1_dOV6T4v8"
+    },
+    "labels": {
+      "searchLabel": "Find a building, office, service, or parking lot",
+      "searchPlaceholder": "Try Wood Center, library, parking…",
+      "searchButton": "Search",
+      "popularHeading": "Popular destinations",
+      "allPlacesHeading": "All places"
+    },
+    "tabs": {
+      "search": true,
+      "parking": true,
+      "access": true,
+      "shuttle": true,
+      "trails": true,
+      "updates": true
+    },
+    "popularIds": [
+      "signers",
+      "wood",
+      "library",
+      "patty",
+      "museum",
+      "fine-arts",
+      "health-safety",
+      "src"
+    ],
+    "contacts": {
+      "general": "907-474-7034",
+      "admissions": "1-800-478-1823",
+      "emergency": "911",
+      "corrections": "uaf-web@alaska.edu"
+    }
+  },
+  "buildingOverrides": {
+    "akasofu": {
+      "latitude": 64.8590582,
+      "longitude": -147.851193
+    }
+  },
+  "customBuildings": [
+    {
+      "id": "custom-building-6108594",
+      "official_name": "New building",
+      "common_name": "Planitarium",
+      "abbreviation": "",
+      "category": "service",
+      "address": "",
+      "latitude": 64.85842,
+      "longitude": -147.8437069,
+      "geometry_status": "admin custom — verify UAF GIS",
+      "source_url": "",
+      "services": [],
+      "search_terms": [],
+      "recommended_parking": [],
+      "marker_label": "",
+      "marker_color": "#236192",
+      "visible": true
+    }
+  ],
+  "parkingOverrides": {},
+  "customParking": [],
+  "contentOverrides": {},
+  "shapes": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shape-1788315411694",
+        "name": "Akasofu Building footprint",
+        "kind": "building-footprint",
+        "visible": true,
+        "stroke": "#734a09",
+        "fill": "#d9d0c9",
+        "weight": 2,
+        "opacity": 0.9,
+        "fillOpacity": 1,
+        "building_id": "museum"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -147.843275,
+              64.858564
+            ],
+            [
+              -147.843275,
+              64.858564
+            ],
+            [
+              -147.843275,
+              64.858564
+            ],
+            [
+              -147.843275,
+              64.858564
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shape-1788315415210",
+        "name": "Planitarium",
+        "kind": "building-footprint",
+        "visible": true,
+        "stroke": "#c9bfb3",
+        "fill": "#d9d0c9",
+        "weight": 1,
+        "opacity": 0.9,
+        "fillOpacity": 1,
+        "building_id": "museum",
+        "parking_id": "parking-9j-36"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -147.843275,
+              64.858564
+            ],
+            [
+              -147.844107,
+              64.858259
+            ],
+            [
+              -147.844112,
+              64.858568
+            ],
+            [
+              -147.843275,
+              64.858564
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shape-1788316169163",
+        "name": "Planitarium footprint",
+        "kind": "building-footprint",
+        "visible": true,
+        "stroke": "#236192",
+        "fill": "#236192",
+        "weight": 3,
+        "opacity": 0.9,
+        "fillOpacity": 0.16,
+        "building_id": "custom-building-6108594"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -147.843297,
+              64.858583
+            ],
+            [
+              -147.843297,
+              64.858583
+            ],
+            [
+              -147.843297,
+              64.858583
+            ],
+            [
+              -147.843297,
+              64.858583
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
