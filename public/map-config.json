@@ -14,7 +14,13 @@
       "trail": "#71984A",
       "closure": "#DF6A2E"
     },
-    "map": {"center": [64.857, -147.829], "zoom": 16},
+    "map": {
+      "center": [
+        64.857,
+        -147.829
+      ],
+      "zoom": 16
+    },
     "labels": {
       "searchLabel": "Find a building, office, service, or parking lot",
       "searchPlaceholder": "Try Wood Center, library, parking…",
@@ -22,14 +28,78 @@
       "popularHeading": "Popular destinations",
       "allPlacesHeading": "All places"
     },
-    "tabs": {"search": true,"parking": true,"access": true,"shuttle": true,"trails": true,"updates": true},
-    "popularIds": ["signers", "wood", "library", "patty", "museum", "fine-arts", "health-safety", "src"],
-    "contacts": {"general": "907-474-7034","admissions": "1-800-478-1823","emergency": "911","corrections": "uaf-web@alaska.edu"}
+    "tabs": {
+      "search": true,
+      "parking": true,
+      "access": true,
+      "shuttle": true,
+      "trails": true,
+      "updates": true
+    },
+    "popularIds": [
+      "signers",
+      "wood",
+      "library",
+      "patty",
+      "museum",
+      "fine-arts",
+      "health-safety",
+      "src"
+    ],
+    "contacts": {
+      "general": "907-474-7034",
+      "admissions": "1-800-478-1823",
+      "emergency": "911",
+      "corrections": "uaf-web@alaska.edu"
+    }
   },
   "buildingOverrides": {},
   "customBuildings": [],
   "parkingOverrides": {},
   "customParking": [],
   "contentOverrides": {},
-  "shapes": []
+  "shapes": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shape-1788314691384",
+        "name": "Planitarium",
+        "kind": "building-footprint",
+        "visible": true,
+        "stroke": "#c9bdae",
+        "fill": "#d9d0c9",
+        "weight": 3,
+        "opacity": 0.9,
+        "fillOpacity": 0.16,
+        "building_id": "akasofu"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -147.843302,
+              64.858284
+            ],
+            [
+              -147.843967,
+              64.858268
+            ],
+            [
+              -147.843946,
+              64.858569
+            ],
+            [
+              -147.843275,
+              64.858569
+            ],
+            [
+              -147.843302,
+              64.858284
+            ]
+          ]
+        ]
+      }
+    }
+  ]
 }
