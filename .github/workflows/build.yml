@@ -2,7 +2,7 @@ name: PHP vanilla map checks
 
 on:
   push:
-    branches: [main, overlay-key-editor-20260902]
+    branches: [main, basemap-toggle-20260902]
   pull_request:
     branches: [main]
 
@@ -56,6 +56,7 @@ jobs:
       - name: Syntax-check vanilla browser JavaScript
         run: |
           node --check assets/js/app.js
+          node --check assets/js/basemap.js
           node --check assets/js/legend.js
           node --check assets/js/overlay-manager.js
           echo 'Vanilla browser JavaScript parses successfully; no install or build was run.'
@@ -74,6 +75,10 @@ jobs:
           grep -Fq 'data-page="images"' /tmp/images.html
           grep -Fq 'data-page="overlays"' /tmp/overlays.html
           grep -Fq 'data-page="print"' /tmp/print.html
+          grep -Fq 'basemap.js' /tmp/map.html
+          grep -Fq 'basemap.js' /tmp/admin.html
+          grep -Fq 'basemap.js' /tmp/overlays.html
+          grep -Fq 'basemap.js' /tmp/print.html
           grep -Fq 'leaflet.draw.js' /tmp/admin.html
           grep -Fq 'leaflet.draw.js' /tmp/overlays.html
           grep -Fq 'overlay-manager.js' /tmp/overlays.html
@@ -96,7 +101,9 @@ jobs:
           test -f includes/footer.php
           test -f assets/css/omni.css
           test -f assets/css/overlays.css
+          test -f assets/css/basemap.css
           test -f assets/js/app.js
+          test -f assets/js/basemap.js
           test -f assets/js/legend.js
           test -f assets/js/overlay-manager.js
           test -f assets/images/uaf-logo.svg
@@ -104,7 +111,9 @@ jobs:
           test -f data/legend.json
           grep -Fq 'assets/css/omni.css' index.php
           grep -Fq 'assets/css/overlays.css' index.php
+          grep -Fq 'assets/css/basemap.css' index.php
           grep -Fq 'assets/js/app.js' includes/footer.php
+          grep -Fq 'assets/js/basemap.js' includes/footer.php
           grep -Fq 'assets/js/legend.js' includes/footer.php
           grep -Fq 'assets/js/overlay-manager.js' includes/footer.php
           grep -Fq 'leaflet.draw.js' includes/footer.php
@@ -113,6 +122,8 @@ jobs:
           grep -Fq 'Publish to GitHub & live map' assets/js/app.js
           grep -Fq 'Map overlays & key' assets/js/overlay-manager.js
           grep -Fq 'parking_visitor_metered' data/legend.json
+          grep -Fq 'Satellite</button>' assets/js/basemap.js
+          grep -Fq "mode: 'map'" assets/js/basemap.js
           grep -q '^RewriteRule \^admin/overlays' .htaccess
           echo 'OMNI/PHP runtime structure is present.'
 
