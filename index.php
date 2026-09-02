@@ -15,7 +15,7 @@ foreach (glob($root . '/data/parking-*.json') ?: [] as $file) $parking = array_m
 $meta = read_json($root . '/data/meta.json', []);
 $config = read_json($root . '/data/map-config.json', read_json($root . '/public/map-config.json', []));
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-$page = $path === '/admin' ? 'admin' : ($path === '/admin/images' ? 'images' : ($path === '/print' ? 'print' : ($path === '/accessible' ? 'accessible' : 'map')));
+$page = ($path === '/admin' || str_ends_with($path, '/admin/index.php')) ? 'admin' : (($path === '/admin/images' || str_ends_with($path, '/admin/images.php')) ? 'images' : (($path === '/print' || str_ends_with($path, '/print.php')) ? 'print' : (($path === '/accessible' || str_ends_with($path, '/accessible.php')) ? 'accessible' : 'map')));
 ?><!doctype html>
 <html lang="en">
 <head>
