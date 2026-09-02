@@ -1,0 +1,6 @@
+{
+  "deployment": "hostinger",
+  "requested": "2026-09-01",
+  "source": "main",
+  "note": "Deployment trigger for Hostinger GitHub integration"
+}
