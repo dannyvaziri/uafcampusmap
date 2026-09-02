@@ -12,13 +12,14 @@ require __DIR__ . '/includes/bootstrap.php';
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Zilla+Slab:wght@600;700&display=swap" rel="stylesheet">
-<?php if (in_array($page, ['map','admin','images','print'], true)): ?>
+<?php if (in_array($page, ['map','admin','images','overlays','print'], true)): ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <?php endif; ?>
-<?php if ($page === 'admin'): ?>
+<?php if ($page === 'admin' || $page === 'overlays'): ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" crossorigin="">
 <?php endif; ?>
 <link rel="stylesheet" href="/assets/css/omni.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
+<link rel="stylesheet" href="/assets/css/overlays.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
 </head>
 <body data-page="<?= htmlspecialchars($page, ENT_QUOTES) ?>">
 <?php require __DIR__ . '/includes/header.php'; ?>
@@ -27,6 +28,7 @@ require __DIR__ . '/includes/bootstrap.php';
 <script id="uaf-parking" type="application/json"><?= uaf_json_for_script($parking) ?></script>
 <script id="uaf-meta" type="application/json"><?= uaf_json_for_script($meta) ?></script>
 <script id="uaf-config" type="application/json"><?= uaf_json_for_script($config) ?></script>
+<script id="uaf-legend" type="application/json"><?= uaf_json_for_script($legend) ?></script>
 <?php require __DIR__ . '/includes/footer.php'; ?>
 </body>
 </html>
