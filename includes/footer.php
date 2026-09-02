@@ -26,3 +26,6 @@ $mapPages = ['map', 'admin', 'images', 'overlays', 'print'];
 <?php else: ?>
 <script src="/assets/js/app.js?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>"></script>
 <?php endif; ?>
+<?php if (in_array($page, ['admin', 'images', 'overlays'], true)): ?>
+<script src="/assets/js/publish-proxy.js?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>"></script>
+<?php endif; ?>
