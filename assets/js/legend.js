@@ -38,9 +38,12 @@
 
   function inferKey(feature) {
     const props = feature?.properties || {};
-    if (props.legend_key && byId.has(props.legend_key)) return props.legend_key;
     if (props.kind === 'building-footprint' || props.building_id) return 'building';
-    if (props.kind === 'parking-area' || props.parking_id) return parkingKey(linkedParking(props));
+    if (props.kind === 'parking-area' || props.parking_id) {
+      if (typeof props.legend_key === 'string' && props.legend_key.startsWith('parking_') && byId.has(props.legend_key)) return props.legend_key;
+      return parkingKey(linkedParking(props));
+    }
+    if (props.legend_key && byId.has(props.legend_key)) return props.legend_key;
     if (props.kind === 'trail') return 'trail';
     if (props.kind === 'construction' || props.kind === 'closure') return 'construction';
     if (props.kind === 'stairs') return 'stairs';
@@ -83,13 +86,7 @@
   patchStoredConfig('uaf-map-live-config');
   patchStoredConfig('uaf-map-config-draft');
 
-  window.UAFMapLegend = {
-    items,
-    byId,
-    parkingKey,
-    inferKey,
-    styleFeature
-  };
+  window.UAFMapLegend = {items, byId, parkingKey, inferKey, styleFeature};
 
   function swatch(entry) {
     const dash = entry.dashArray ? ' dashed' : '';
@@ -97,16 +94,14 @@
     return '<i class="shared-key-swatch ' + esc(geometry) + dash + '" style="--key-stroke:' + esc(entry.stroke || '#236192') + ';--key-fill:' + esc(entry.fill || entry.stroke || '#236192') + '"></i>';
   }
 
-  function keyRows(compact) {
+  function keyRows() {
     const groups = new Map();
     for (const item of items) {
       const group = item.group || 'Map';
       if (!groups.has(group)) groups.set(group, []);
       groups.get(group).push(item);
     }
-    return [...groups.entries()].map(([group, rows]) =>
-      '<section class="shared-key-group"><h4>' + esc(group) + '</h4>' + rows.map(item => '<div class="shared-key-row">' + swatch(item) + '<span>' + esc(item.label) + '</span></div>').join('') + '</section>'
-    ).join('');
+    return [...groups.entries()].map(([group, rows]) => '<section class="shared-key-group"><h4>' + esc(group) + '</h4>' + rows.map(item => '<div class="shared-key-row">' + swatch(item) + '<span>' + esc(item.label) + '</span></div>').join('') + '</section>').join('');
   }
 
   function injectPublicKey() {
@@ -114,17 +109,20 @@
     if (!mapColumn || mapColumn.querySelector('.shared-map-key')) return;
     const details = document.createElement('details');
     details.className = 'shared-map-key';
-    details.innerHTML = '<summary>Map key</summary><div class="shared-key-body">' + keyRows(true) + '</div>';
+    details.innerHTML = '<summary>Map key</summary><div class="shared-key-body">' + keyRows() + '</div>';
     mapColumn.append(details);
   }
 
   function replacePrintKey() {
     const key = document.querySelector('.print-key');
-    if (!key) return;
-    key.innerHTML = '<h3>Map key</h3><div class="print-shared-key">' + keyRows(true) + '</div><p class="key-note">Overlay colors and symbols use the same editable key as the public and admin maps. Follow posted campus signs for current conditions.</p>';
+    if (!key || key.dataset.sharedKey === 'true') return;
+    key.dataset.sharedKey = 'true';
+    key.innerHTML = '<h3>Map key</h3><div class="print-shared-key">' + keyRows() + '</div><p class="key-note">Overlay colors and symbols use the same editable key as the public and admin maps. Follow posted campus signs for current conditions.</p>';
   }
 
-  function injectAdminLink() {
+  function ensureAdminLinks() {
+    const page = document.body.dataset.page || '';
+    if (!['admin','images'].includes(page)) return;
     const actions = document.querySelector('.admin-top-actions');
     if (actions && !actions.querySelector('[href="/admin/overlays"]')) {
       const link = document.createElement('a');
@@ -132,23 +130,15 @@
       link.textContent = 'Overlays & key';
       actions.append(link);
     }
-    const grid = document.querySelector('.edit-choice-grid');
-    if (grid && !grid.querySelector('.overlay-key-card')) {
-      const link = document.createElement('a');
-      link.href = '/admin/overlays';
-      link.className = 'overlay-key-card';
-      link.innerHTML = '<span class="choice-arrow" aria-hidden="true">→</span><strong>All overlays & key</strong><small>Edit every building, parking lot and mapped feature from one layer inventory.</small>';
-      grid.append(link);
-    }
-  }
-
-  function injectImagesLink() {
-    const actions = document.querySelector('.admin-top-actions');
-    if (actions && !actions.querySelector('[href="/admin/overlays"]')) {
-      const link = document.createElement('a');
-      link.href = '/admin/overlays';
-      link.textContent = 'Overlays & key';
-      actions.append(link);
+    if (page === 'admin') {
+      const grid = document.querySelector('.edit-choice-grid');
+      if (grid && !grid.querySelector('.overlay-key-card')) {
+        const link = document.createElement('a');
+        link.href = '/admin/overlays';
+        link.className = 'overlay-key-card';
+        link.innerHTML = '<span class="choice-arrow" aria-hidden="true">→</span><strong>All overlays & key</strong><small>Edit every building, parking lot and mapped feature from one layer inventory.</small>';
+        grid.append(link);
+      }
     }
   }
 
@@ -156,7 +146,10 @@
     const page = document.body.dataset.page || 'map';
     if (page === 'map') injectPublicKey();
     if (page === 'print') replacePrintKey();
-    if (page === 'admin') injectAdminLink();
-    if (page === 'images') injectImagesLink();
+    if (page === 'admin' || page === 'images') {
+      ensureAdminLinks();
+      const observer = new MutationObserver(ensureAdminLinks);
+      observer.observe(document.getElementById('app') || document.body, {subtree:true, childList:true});
+    }
   }, 0);
 }());
