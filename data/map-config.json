@@ -80,48 +80,10 @@
       "visible": true
     }
   ],
-  "parkingOverrides": {},
+  "parkingOverrides": [],
   "customParking": [],
-  "contentOverrides": {},
+  "contentOverrides": [],
   "shapes": [
-    {
-      "type": "Feature",
-      "properties": {
-        "id": "shape-1788315411694",
-        "name": "Akasofu Building footprint",
-        "kind": "building-footprint",
-        "visible": true,
-        "stroke": "#734a09",
-        "fill": "#d9d0c9",
-        "weight": 2,
-        "opacity": 0.9,
-        "fillOpacity": 1,
-        "building_id": "museum"
-      },
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [
-          [
-            [
-              -147.843275,
-              64.858564
-            ],
-            [
-              -147.843275,
-              64.858564
-            ],
-            [
-              -147.843275,
-              64.858564
-            ],
-            [
-              -147.843275,
-              64.858564
-            ]
-          ]
-        ]
-      }
-    },
     {
       "type": "Feature",
       "properties": {
@@ -129,13 +91,13 @@
         "name": "Planitarium",
         "kind": "building-footprint",
         "visible": true,
-        "stroke": "#c9bfb3",
-        "fill": "#d9d0c9",
-        "weight": 1,
-        "opacity": 0.9,
-        "fillOpacity": 1,
+        "stroke": "#236192",
+        "fill": "#C4CFDA",
+        "weight": 2,
+        "opacity": 1,
+        "fillOpacity": 0.58,
         "building_id": "museum",
-        "parking_id": "parking-9j-36"
+        "legend_key": "building"
       },
       "geometry": {
         "type": "Polygon",
@@ -164,40 +126,299 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "shape-1788316169163",
-        "name": "Planitarium footprint",
-        "kind": "building-footprint",
+        "id": "shape-1788379786492",
+        "name": "Akasofu Building footprint",
         "visible": true,
+        "legend_key": "building",
+        "kind": "building-footprint",
+        "building_id": "akasofu",
         "stroke": "#236192",
-        "fill": "#236192",
-        "weight": 3,
-        "opacity": 0.9,
-        "fillOpacity": 0.16,
-        "building_id": "custom-building-6108594"
+        "fill": "#C4CFDA",
+        "weight": 2,
+        "opacity": 1,
+        "fillOpacity": 0.58
       },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
             [
-              -147.843297,
-              64.858583
+              -147.85119,
+              64.85903
             ],
             [
-              -147.843297,
-              64.858583
+              -147.850868,
+              64.859059
             ],
             [
-              -147.843297,
-              64.858583
+              -147.850724,
+              64.859171
             ],
             [
-              -147.843297,
-              64.858583
+              -147.850691,
+              64.859221
+            ],
+            [
+              -147.850289,
+              64.859289
+            ],
+            [
+              -147.850048,
+              64.859298
+            ],
+            [
+              -147.850058,
+              64.859488
+            ],
+            [
+              -147.850069,
+              64.859545
+            ],
+            [
+              -147.850396,
+              64.859558
+            ],
+            [
+              -147.850745,
+              64.859549
+            ],
+            [
+              -147.851062,
+              64.859558
+            ],
+            [
+              -147.851442,
+              64.859396
+            ],
+            [
+              -147.851603,
+              64.859344
+            ],
+            [
+              -147.851582,
+              64.859159
+            ],
+            [
+              -147.85119,
+              64.85903
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shape-1788379834461",
+        "name": "Eielson Building footprint",
+        "visible": true,
+        "legend_key": "building",
+        "kind": "building-footprint",
+        "building_id": "eielson",
+        "stroke": "#236192",
+        "fill": "#C4CFDA",
+        "weight": 2,
+        "opacity": 1,
+        "fillOpacity": 0.58
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -147.821981,
+              64.855893
+            ],
+            [
+              -147.821643,
+              64.855891
+            ],
+            [
+              -147.821584,
+              64.855941
+            ],
+            [
+              -147.821584,
+              64.856472
+            ],
+            [
+              -147.821943,
+              64.856479
+            ],
+            [
+              -147.822008,
+              64.856447
+            ],
+            [
+              -147.821981,
+              64.855893
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shape-1788379871492",
+        "name": "Signers' Hall footprint",
+        "visible": true,
+        "legend_key": "building",
+        "kind": "building-footprint",
+        "building_id": "signers",
+        "stroke": "#236192",
+        "fill": "#C4CFDA",
+        "weight": 2,
+        "opacity": 1,
+        "fillOpacity": 0.58
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -147.821343,
+              64.856044
+            ],
+            [
+              -147.820946,
+              64.856048
+            ],
+            [
+              -147.820887,
+              64.856406
+            ],
+            [
+              -147.82131,
+              64.856399
+            ],
+            [
+              -147.821327,
+              64.856292
+            ],
+            [
+              -147.821369,
+              64.856199
+            ],
+            [
+              -147.821343,
+              64.856044
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shape-1788379915264",
+        "name": "Joseph E. Usibelli Engineering Learning and Innovation Building footprint",
+        "visible": true,
+        "legend_key": "building",
+        "kind": "building-footprint",
+        "building_id": "usibelli",
+        "stroke": "#236192",
+        "fill": "#C4CFDA",
+        "weight": 2,
+        "opacity": 1,
+        "fillOpacity": 0.58
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -147.81814,
+              64.855301
+            ],
+            [
+              -147.817883,
+              64.855296
+            ],
+            [
+              -147.81762,
+              64.855422
+            ],
+            [
+              -147.817384,
+              64.855504
+            ],
+            [
+              -147.817196,
+              64.855627
+            ],
+            [
+              -147.817105,
+              64.855766
+            ],
+            [
+              -147.817094,
+              64.855898
+            ],
+            [
+              -147.817985,
+              64.855916
+            ],
+            [
+              -147.818049,
+              64.855877
+            ],
+            [
+              -147.818033,
+              64.855978
+            ],
+            [
+              -147.818741,
+              64.855982
+            ],
+            [
+              -147.818757,
+              64.855914
+            ],
+            [
+              -147.818843,
+              64.855914
+            ],
+            [
+              -147.818907,
+              64.855875
+            ],
+            [
+              -147.818913,
+              64.855811
+            ],
+            [
+              -147.818762,
+              64.855802
+            ],
+            [
+              -147.818746,
+              64.855741
+            ],
+            [
+              -147.818591,
+              64.855734
+            ],
+            [
+              -147.8185,
+              64.855686
+            ],
+            [
+              -147.818119,
+              64.855679
+            ],
+            [
+              -147.818188,
+              64.855659
+            ],
+            [
+              -147.81814,
+              64.855301
             ]
           ]
         ]
       }
     }
-  ]
+  ],
+  "imageOverlays": []
 }
