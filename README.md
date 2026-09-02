@@ -1,99 +1,156 @@
 # UAF Campus Map
 
-WCAG 2.2 AA-oriented public-pilot web app for the University of Alaska Fairbanks campus map.
+University of Alaska Fairbanks campus-map implementation built for a standard PHP/Apache host and future ModernCampus OMNI integration.
 
-## Hostinger GitHub deployment
+## Production architecture
 
-Connect this repository directly to a Hostinger Node.js Web App.
+The production runtime is intentionally simple:
+
+- PHP 8.5
+- Apache / `.htaccess`
+- HTML and CSS
+- Vanilla JavaScript
+- Leaflet and Leaflet Draw loaded from CDN
+- ArcGIS imagery configuration already stored in the map configuration
+- JSON content/data files
+- No React runtime
+- No Vite runtime
+- No npm install or Node.js production build
+
+The old development artifacts that may still exist in repository history are not part of the PHP runtime. Do not reconnect Hostinger as a Node/Vite application.
+
+## Hostinger deployment
+
+Deploy the repository as a PHP website using:
 
 - Repository: `dannyvaziri/uafcampusmap`
 - Branch: `main`
-- Framework preset: **Vite / React** — do not select Next.js
-- Node version: **20.x** or newer supported version
-- Root directory: `./`
-- Package manager: `npm`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Environment variables: none required for the current admin model
+- Deployment directory: `public_html`
+- PHP version: `8.5`
+- Build command: none
+- Output/build directory: none
 
-The `public/.htaccess` file provides SPA fallback for direct visits to `/accessible`, `/print`, and `/admin` when Hostinger serves the Vite output through Apache-compatible hosting.
+Hostinger should pull the repository files directly into the PHP document root. The root `.htaccess` supplies the clean public routes.
 
-## Routes
+## Public routes
 
 - `/` — interactive campus map
 - `/accessible` — searchable text-only alternative
-- `/print` — multi-template print center
-- `/admin` — map management console
+- `/print` — print and direct-PDF page
+- `/admin` — numbered map editor
+- `/admin/images` — PNG overlay editor
 
-## Admin map management console
+Equivalent PHP entry files are retained for OMNI portability:
 
-The admin console is intentionally not linked in the public header. Open `/admin` directly.
+- `/index.php`
+- `/accessible.php`
+- `/print.php`
+- `/admin/index.php`
+- `/admin/images.php`
 
-It can manage:
+## OMNI-friendly layout
 
-- existing building public name, official name, abbreviation, category and address
-- marker latitude/longitude, draggable map position, marker label and marker color
-- building visibility, search words, services and recommended parking
-- custom map-only buildings
-- custom GeoJSON polygons, rectangles, lines and points using a visual Leaflet drawing editor
-- shape name, building association, stroke/fill colors, line width, fill opacity and visibility
-- public site title/subtitle and pilot/accessibility notice
-- search wording and public contact details
-- UAF/public map colors
-- default map center and zoom
-- public information-tab visibility
-- popular destination shortcuts
-- full advanced configuration JSON
-- local browser draft save/load
-- JSON import/export and backups
+The current runtime is organized so shared pieces can later become ModernCampus OMNI includes/content blocks:
 
-### Publishing from the admin console
+- `/includes/bootstrap.php` — data loading, route/page setup, cache versioning
+- `/includes/header.php` — shared UAF header/navigation
+- `/includes/footer.php` — shared footer and page-specific script loading
+- `/assets/css/omni.css` — all application and print styling
+- `/assets/js/app.js` — all browser behavior
+- `/assets/images/` — UAF assets
+- `/data/` — building, parking, metadata and map configuration JSON
 
-The current architecture is deliberately backendless. Published map settings are stored in `public/map-config.json` in this GitHub repository. The public app loads that file at runtime and Hostinger also receives the normal GitHub deployment update.
+No compiled asset directory is required.
 
-To publish from `/admin`, create a **fine-grained GitHub personal access token** with:
+## Map data and ArcGIS
+
+`data/map-config.json` is the published editable map configuration. It contains the existing ArcGIS imagery configuration used by the site. Treat that configuration as sensitive operational configuration: preserve it, do not copy it into documentation, issues, screenshots or public support messages, and do not replace it during routine editor work.
+
+The public map merges the base building and parking JSON files with overrides/custom records from `data/map-config.json`.
+
+## Admin workflow
+
+`/admin` follows a simple three-step model:
+
+1. **Choose** — Building, Parking, Shape/Area, Words, Appearance, Layers or Advanced.
+2. **Edit** — Update fields and, where applicable, edit markers/geometry directly with Leaflet.
+3. **Publish** — Validate the draft, save locally, test GitHub access, and publish the JSON configuration.
+
+Building editing includes names, official name, abbreviation/marker label, category, address, latitude/longitude, services, recommended parking, marker color, visibility and building footprint.
+
+Parking editing includes code, name, type, restrictions, visibility and boundary geometry.
+
+The visual shape editor supports polygons, rectangles, lines and points. Invalid/collapsed geometry is not rendered publicly.
+
+### Browser drafts
+
+Drafts are stored only in the current browser using `localStorage`. Saving a draft does not alter the public map.
+
+### GitHub publishing
+
+Publishing from the admin uses GitHub's Contents API to update only:
+
+`data/map-config.json`
+
+on branch `main`.
+
+Use a fine-grained GitHub personal access token restricted to this repository with:
 
 - Repository access: **Only select repositories → uafcampusmap**
 - Repository permission: **Contents → Read and write**
 
-Paste the token into the Publish section only when needed. The token is held only in React memory for that browser session. It is **not** written to localStorage, `.env`, the repository, map configuration, or generated site files.
+The token is stored only in `sessionStorage` for the browser session. It is not written into the map configuration, repository, browser draft or generated output.
 
-Publishing commits only `public/map-config.json` to `main`, providing a GitHub audit/revision history for public-map configuration changes.
+After GitHub accepts the change, a Hostinger Git deployment connected to `main` should redeploy the PHP site automatically.
 
-This is not the same as enterprise user authentication. If UAF later requires SSO, role-based editors, multi-user approvals, or non-GitHub administrators, add an authenticated backend/CMS and keep the same public configuration schema.
+## PNG overlay editor
 
-## Included data
+`/admin/images` supports:
 
-- 67 public UAF building records
-- 62 official parking rows/codes
-- current parking rates and visitor guidance
-- current accessibility resource links
-- BusWhere/UAF shuttle links and stop names
+1. Upload a PNG (maximum 2 MB).
+2. Position it with the center drag handle and resize it with corner handles.
+3. Set name, opacity and visibility, then save a browser draft or publish the configuration to GitHub.
+
+PNG image data and geographic bounds are stored in the JSON configuration. Transparent PNGs are recommended.
+
+## Print and PDF
+
+`/print` keeps **Print** and **Save PDF** as separate actions.
+
+- **Print** prepares a static map snapshot and opens the browser's native print dialog.
+- **Save PDF** creates and downloads a PDF directly in the browser.
+
+Supported paper sizes:
+
+- 11×17 landscape
+- 8.5×11 landscape
+
+The page supports the full main campus or a selected/current map area and includes building names, parking, map shapes/PNGs, road/reference labels, scale, coordinate grid, north arrow, map key and UAF branding. The layout is based on the established UAF campus-map print convention while using the current live map data.
+
+Downloaded filenames are intentionally short:
+
+- `UAF-map-11x17.pdf`
+- `UAF-map-letter.pdf`
+
+## Data currently included
+
+- 67 base UAF building records
+- 62 base parking records
+- current parking guidance and rates in the metadata file
+- accessibility resource links
+- shuttle and BusWhere links
 - North Campus trail inventory
-- 2026 public construction schedule information
-- future authoritative GIS layer scaffold
+- published 2026 construction schedule information
+- configurable building/parking overrides, custom shapes and PNG overlays
+
+Authoritative GIS should replace provisional geometry as verified UAF Facilities/GIS data becomes available.
 
 ## Accessibility
 
-The app is built toward WCAG 2.2 Level AA with skip navigation, semantic landmarks, labeled controls, keyboard-operable tabs and map markers, live status announcements, accessible dialog focus management, large pointer targets, non-drag map pan controls, reduced-motion support, contrast support, mobile reflow, and a text-only alternative.
+The interface is built toward WCAG 2.2 Level AA, including keyboard-operable tabs, visible focus, labeled form controls, live status messages, keyboard-enabled Leaflet maps, non-drag pan controls, dialog focus handling, reduced-motion support and a text-only route.
 
-The admin console uses native form controls, visible labels/focus states and keyboard-accessible editing wherever possible. The Leaflet visual shape editor is an enhancement; the full GeoJSON can also be edited/imported through the Advanced JSON section without relying on pointer drawing.
+Formal institutional conformance still requires human keyboard, zoom/reflow, screen-reader, touch/mobile and final PDF testing.
 
-Formal conformance should still be verified with human keyboard, zoom/reflow, VoiceOver/NVDA and mobile assistive-technology testing before an institutional certification claim.
+## Repository checks
 
-## Pilot limitations
-
-The public pilot does not claim authoritative parking/enforcement boundaries, exact entrance geometry, live construction detours, or turn-by-turn accessible routing until UAF Facilities/GIS or operational source data is connected.
-
-## Development
-
-```bash
-npm install
-npm run dev
-```
-
-Production build:
-
-```bash
-npm run build
-```
+GitHub Actions performs PHP syntax checks, JSON validation and runtime-structure checks. There is no npm install and no production build step.
