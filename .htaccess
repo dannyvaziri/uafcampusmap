@@ -2,6 +2,7 @@ RewriteEngine On
 RewriteBase /
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^admin/overlays/?$ /admin/overlays.php [L,QSA]
 RewriteRule ^admin/images/?$ /admin/images.php [L,QSA]
 RewriteRule ^admin/?$ /admin/index.php [L,QSA]
 RewriteRule ^print/?$ /print.php [L,QSA]
