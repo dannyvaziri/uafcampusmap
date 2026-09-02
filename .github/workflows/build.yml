@@ -21,6 +21,7 @@ jobs:
           php -l admin/index.php
           php -l admin/images.php
           php -l admin/overlays.php
+          php -l admin/publish.php
           for file in includes/*.php; do php -l "$file"; done
 
       - name: Validate JSON data
@@ -59,6 +60,7 @@ jobs:
           node --check assets/js/basemap.js
           node --check assets/js/legend.js
           node --check assets/js/overlay-manager.js
+          node --check assets/js/publish-proxy.js
           echo 'Vanilla browser JavaScript parses successfully; no install or build was run.'
 
       - name: Smoke-test PHP page rendering
@@ -79,12 +81,27 @@ jobs:
           grep -Fq 'basemap.js' /tmp/admin.html
           grep -Fq 'basemap.js' /tmp/overlays.html
           grep -Fq 'basemap.js' /tmp/print.html
+          grep -Fq 'publish-proxy.js' /tmp/admin.html
+          grep -Fq 'publish-proxy.js' /tmp/images.html
+          grep -Fq 'publish-proxy.js' /tmp/overlays.html
           grep -Fq 'leaflet.draw.js' /tmp/admin.html
           grep -Fq 'leaflet.draw.js' /tmp/overlays.html
           grep -Fq 'overlay-manager.js' /tmp/overlays.html
           grep -Fq 'uaf-legend' /tmp/map.html
           grep -Fq 'jspdf' /tmp/print.html
           echo 'All PHP page shells rendered with the expected page mode and page-specific assets.'
+
+      - name: Check secure publishing path
+        run: |
+          test -f admin/publish.php
+          grep -Fq "getenv('UAF_GITHUB_TOKEN')" admin/publish.php
+          grep -Fq "uaf-map-secrets.php" admin/publish.php
+          grep -Fq "REMOTE_USER" admin/publish.php
+          grep -Fq "?ref=" admin/publish.php
+          grep -Fq "current['sha']" admin/publish.php
+          grep -Fq "/admin/publish.php" assets/js/publish-proxy.js
+          ! grep -qE 'github_pat_|ghp_' admin/publish.php assets/js/publish-proxy.js includes/footer.php
+          echo 'Server-side publishing is protected, fetches the current SHA, and contains no embedded GitHub token.'
 
       - name: Check OMNI runtime structure
         run: |
@@ -96,6 +113,7 @@ jobs:
           test -f admin/index.php
           test -f admin/images.php
           test -f admin/overlays.php
+          test -f admin/publish.php
           test -f includes/bootstrap.php
           test -f includes/header.php
           test -f includes/footer.php
@@ -106,6 +124,7 @@ jobs:
           test -f assets/js/basemap.js
           test -f assets/js/legend.js
           test -f assets/js/overlay-manager.js
+          test -f assets/js/publish-proxy.js
           test -f assets/images/uaf-logo.svg
           test -f data/map-config.json
           test -f data/legend.json
@@ -116,6 +135,7 @@ jobs:
           grep -Fq 'assets/js/basemap.js' includes/footer.php
           grep -Fq 'assets/js/legend.js' includes/footer.php
           grep -Fq 'assets/js/overlay-manager.js' includes/footer.php
+          grep -Fq 'assets/js/publish-proxy.js' includes/footer.php
           grep -Fq 'leaflet.draw.js' includes/footer.php
           grep -Fq 'Save PDF' assets/js/app.js
           grep -Fq 'window.print()' assets/js/app.js
