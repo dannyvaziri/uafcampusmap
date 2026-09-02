@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "settings": {
     "siteTitle": "University of Alaska Fairbanks",
     "siteSubtitle": "Campus Map — Public Pilot",
@@ -14,10 +14,7 @@
       "trail": "#4f6f52",
       "closure": "#b42318"
     },
-    "map": {
-      "center": [64.857, -147.829],
-      "zoom": 16
-    },
+    "map": {"center": [64.857, -147.829], "zoom": 16},
     "labels": {
       "searchLabel": "Find a building, office, service, or parking lot",
       "searchPlaceholder": "Try Wood Center, library, parking…",
@@ -25,25 +22,14 @@
       "popularHeading": "Popular destinations",
       "allPlacesHeading": "All places"
     },
-    "tabs": {
-      "search": true,
-      "parking": true,
-      "access": true,
-      "shuttle": true,
-      "trails": true,
-      "updates": true
-    },
+    "tabs": {"search": true,"parking": true,"access": true,"shuttle": true,"trails": true,"updates": true},
     "popularIds": ["signers", "wood", "library", "patty", "museum", "fine-arts", "health-safety", "src"],
-    "contacts": {
-      "general": "907-474-7034",
-      "admissions": "1-800-478-1823",
-      "emergency": "911",
-      "corrections": "uaf-web@alaska.edu"
-    }
+    "contacts": {"general": "907-474-7034","admissions": "1-800-478-1823","emergency": "911","corrections": "uaf-web@alaska.edu"}
   },
   "buildingOverrides": {},
   "customBuildings": [],
   "parkingOverrides": {},
   "customParking": [],
+  "contentOverrides": {},
   "shapes": []
 }
