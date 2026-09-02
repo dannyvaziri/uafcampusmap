@@ -1,6 +1,6 @@
 {
   "name": "uaf-campus-map",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
@@ -12,6 +12,7 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "html2canvas": "1.4.1",
     "leaflet": "1.9.4",
     "leaflet-draw": "1.0.4",
     "qrcode.react": "4.2.0",
