@@ -1,15 +1,16 @@
 import React from 'react'
-import {Link,NavLink,Route,Routes} from 'react-router-dom'
+import {Link,NavLink,Route,Routes,useLocation} from 'react-router-dom'
 import MapPage from './pages/MapPage.jsx'
 import AccessiblePage from './pages/AccessiblePage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
+import ImageOverlayPage from './pages/ImageOverlayPage.jsx'
 import PrintPage from './pages/PrintPage.jsx'
 import {campus} from './data/runtime.js'
 
 function telHref(value){const digits=String(value||'').replace(/\D/g,'');return `tel:${digits.length===10?'+1'+digits:'+'+digits}`}
 
 function Header(){
- const ui=campus.ui||{},subtitle=ui.siteSubtitle||'Campus Map'
+ const ui=campus.ui||{},subtitle=ui.siteSubtitle||'Campus Map',location=useLocation(),admin=location.pathname.startsWith('/admin')
  return <header className="site-header">
   <div className="brand-grid" aria-hidden="true"/>
   <Link className="brand-lockup" to="/" aria-label="University of Alaska Fairbanks campus map home">
@@ -19,7 +20,8 @@ function Header(){
   <nav className="header-nav" aria-label="Campus map tools">
    <NavLink to="/" end>Map</NavLink>
    <NavLink to="/accessible">Text map</NavLink>
-   <NavLink to="/print?template=visitor">Print</NavLink>
+   <NavLink to="/print">Print</NavLink>
+   {admin&&<><NavLink to="/admin" end>Admin</NavLink><NavLink to="/admin/images">PNG overlays</NavLink></>}
   </nav>
  </header>
 }
@@ -34,4 +36,4 @@ function Footer(){
 
 function NotFound(){return <main id="main-content" className="page narrow"><p className="eyebrow">UAF CAMPUS MAP</p><h1>That path doesn't lead anywhere.</h1><p><Link to="/">Return to the campus map</Link>.</p></main>}
 
-export default function App(){return <><a className="skip-link" href="#main-content">Skip to main content</a><Header/><Routes><Route path="/" element={<MapPage/>}/><Route path="/accessible" element={<AccessiblePage/>}/><Route path="/admin" element={<AdminPage/>}/><Route path="/print" element={<PrintPage/>}/><Route path="*" element={<NotFound/>}/></Routes><Footer/></>}
+export default function App(){return <><a className="skip-link" href="#main-content">Skip to main content</a><Header/><Routes><Route path="/" element={<MapPage/>}/><Route path="/accessible" element={<AccessiblePage/>}/><Route path="/admin" element={<AdminPage/>}/><Route path="/admin/images" element={<ImageOverlayPage/>}/><Route path="/print" element={<PrintPage/>}/><Route path="*" element={<NotFound/>}/></Routes><Footer/></>}
