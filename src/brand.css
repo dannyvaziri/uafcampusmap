@@ -1,0 +1,131 @@
+:root{
+  --blue:var(--uaf-blue,#236192);
+  --gold:var(--uaf-gold,#FFCD00);
+  --deep:#111C4E;
+  --ink:#17242e;
+  --muted:#66665D;
+  --line:#C4CFDA;
+  --ice:#f4f8fb;
+  --soft-gold:#F6DFA4;
+  --trail:#71984A;
+  --orange:#DF6A2E;
+  font-family:'Barlow',Arial,sans-serif;
+}
+html,body,button,input,select,textarea{font-family:'Barlow',Arial,sans-serif}
+body{background:#f4f8fb;color:var(--ink)}
+h1,h2,.display-type{font-family:'Zilla Slab','Merriweather',Georgia,serif;letter-spacing:-.015em}
+p,li,dd,dt{line-height:1.5}
+a{color:#185f8e}
+:focus-visible{outline:3px solid var(--deep);outline-offset:3px;box-shadow:0 0 0 2px var(--gold)}
+
+/* UAF institutional header */
+.site-header{position:relative;isolation:isolate;background:#fff;color:var(--deep);border-top:7px solid var(--blue);border-bottom:6px solid var(--gold);padding:12px 22px;min-height:92px;overflow:hidden}
+.site-header::before{content:"";position:absolute;inset:auto 0 0 0;height:4px;background:var(--blue);z-index:-1}
+.brand-grid{position:absolute;right:-28px;top:-34px;width:240px;height:165px;opacity:.17;pointer-events:none;z-index:-1;background-image:repeating-linear-gradient(90deg,var(--gold) 0 2px,transparent 2px 28px),repeating-linear-gradient(0deg,var(--gold) 0 2px,transparent 2px 28px);transform:rotate(-4deg)}
+.brand-lockup{display:flex;align-items:center;gap:18px;text-decoration:none;color:var(--deep);min-height:64px}
+.uaf-logo{display:block;width:min(330px,40vw);height:auto;min-width:190px}
+.map-product-name{padding-left:18px;border-left:2px solid var(--line);font-family:'Zilla Slab','Merriweather',Georgia,serif;font-weight:700;font-size:1.25rem;line-height:1.05;color:var(--deep)}
+.header-nav{position:relative;z-index:2;gap:4px}
+.header-nav a{color:var(--deep);font-weight:800;border-radius:7px;padding:10px 12px;text-decoration:none;border-bottom:3px solid transparent}
+.header-nav a:hover{background:#eef5f9;color:var(--blue)}
+.header-nav a.active{color:var(--blue);border-bottom-color:var(--gold);background:#f7fafc}
+
+/* UAF voice + wayfinding introduction */
+.map-intro{position:relative;padding:18px 16px 16px;background:var(--deep);color:#fff;overflow:hidden;border-bottom:6px solid var(--gold)}
+.map-intro::after{content:"";position:absolute;width:170px;height:120px;right:-40px;bottom:-48px;opacity:.16;background-image:repeating-linear-gradient(90deg,var(--gold) 0 2px,transparent 2px 24px),repeating-linear-gradient(0deg,var(--gold) 0 2px,transparent 2px 24px)}
+.map-intro .eyebrow{position:relative;z-index:1;color:var(--gold);margin:0 0 4px;font-size:.73rem;font-weight:800;letter-spacing:.17em}
+.map-intro h1{position:relative;z-index:1;margin:0;color:#fff;font-size:clamp(1.75rem,3vw,2.35rem);line-height:1}
+.map-intro p:last-child{position:relative;z-index:1;margin:8px 0 0;max-width:34rem;color:#fff;font-size:.94rem}
+.eyebrow{font-family:'Barlow',Arial,sans-serif;color:var(--blue);font-size:.74rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+
+/* Public map controls */
+.map-page>.pilot-notice{margin:0;border-radius:0;border-left:0;border-top:0;background:#fff6d9;border-color:#e4c64e;color:#3f3600;padding:10px 18px}
+.map-workspace{border-top:0;background:#fff}
+.search-form{background:#fff;padding:15px 16px}
+.search-form label{color:var(--deep);font-weight:800}
+.search-row input,.wide-input{border:2px solid #7899ae;background:#fff;color:var(--ink)}
+.search-row input:focus,.wide-input:focus{border-color:var(--blue)}
+.search-row button,.print-button{background:var(--gold);color:var(--deep);border:2px solid #d1aa00;font-weight:800}
+.search-row button:hover,.print-button:hover,.primary-action:hover{background:#f2c200}
+.tablist button{font-family:'Barlow',Arial,sans-serif;color:#40545f;background:#fff}
+.tablist button[aria-selected=true]{color:var(--deep);border-bottom-color:var(--gold);background:#eef5f9}
+.tabpanel-wrap h2,.tabpanel-wrap h3{color:var(--deep)}
+.tabpanel-wrap h2{font-family:'Zilla Slab','Merriweather',Georgia,serif;font-size:1.28rem}
+.chip{border:2px solid #98aebb;color:var(--deep)}
+.chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.result-card{border-color:var(--line);border-radius:7px}
+.result-card:hover{border-color:var(--blue);box-shadow:inset 4px 0 0 var(--gold);background:#f9fbfc}
+.result-card strong{color:var(--deep)}
+.status-pill.verified{background:#eaf2e4;color:#3d5f28}
+.status-pill.pending{background:#fff3cf;color:#604900}
+.callout{border-left-color:var(--gold);background:#f4f8fb;color:var(--deep)}
+.map-toolbar{border-bottom:1px solid var(--line);padding:10px}
+.map-toolbar button,.map-toolbar a{border:2px solid #7899ae;color:var(--deep);border-radius:7px;background:#fff}
+.map-toolbar button:hover,.map-toolbar a:hover{border-color:var(--blue);background:#eef5f9}
+.pan-controls{border:2px solid var(--blue);border-radius:8px;background:#fffffff5}
+.pan-controls button{border:1px solid #7899ae;border-radius:5px;color:var(--deep)}
+.uaf-building-icon span{width:40px;height:40px;background:var(--pin,var(--map-marker,#236192));border:3px solid #fff;box-shadow:0 0 0 3px var(--gold),0 3px 10px #0004;font:800 10px 'Barlow',Arial,sans-serif}
+.map-help,.status-banner{color:#40545f}
+
+/* Detail dialog */
+.place-dialog{border-radius:10px}
+.dialog-head{background:var(--deep);border-bottom:6px solid var(--gold)}
+.dialog-head h2{font-family:'Zilla Slab','Merriweather',Georgia,serif;color:#fff;font-size:1.38rem}
+.dialog-actions a,.dialog-actions button,.page-actions a,.button-link{border:2px solid #7899ae;border-radius:7px;color:var(--deep)}
+.dialog-actions a:first-child{background:var(--gold);border-color:#d1aa00}
+
+/* Brand pages + admin */
+.page h1,.page h2{font-family:'Zilla Slab','Merriweather',Georgia,serif;color:var(--deep)}
+.page h1{font-size:clamp(2rem,5vw,3rem);line-height:1.02}
+.admin-title-row{padding:17px 18px;background:var(--deep);color:#fff;border-bottom:6px solid var(--gold);border-radius:8px 8px 0 0}
+.admin-title-row h1{color:#fff;margin:0}
+.admin-title-row p{color:#fff;margin-bottom:0}
+.admin-status{border-left-color:var(--gold);background:#fff7d9;color:#4b3b00}
+.admin-tabs{padding:12px;background:#eef5f9}
+.admin-tabs button{border-radius:6px;border:2px solid #9aafba;color:var(--deep)}
+.admin-tabs button[aria-selected=true]{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:inset 0 -4px 0 var(--gold)}
+.admin-card,.admin-list,.admin-edit-pane,.admin-shape-panel{border-radius:8px;border-color:var(--line)}
+.admin-card h3,.admin-shape-panel h3{font-family:'Zilla Slab','Merriweather',Georgia,serif;color:var(--deep)}
+.primary-admin{background:var(--gold)!important;color:var(--deep)!important;border-color:#d1aa00!important}
+
+/* Print identity */
+.print-tools{background:var(--deep);border-bottom:5px solid var(--gold)}
+.print-sheet>header{border-bottom:7px solid var(--gold)}
+.print-sheet>header h1{font-family:'Zilla Slab','Merriweather',Georgia,serif;color:var(--blue)}
+.print-map .print-pin{fill:var(--blue);stroke:var(--gold);stroke-width:4}
+.print-map text{font-family:'Barlow',Arial,sans-serif;fill:var(--deep)}
+.print-sheet>footer{border-top:2px solid var(--blue)}
+
+/* Institutional footer */
+.site-footer{background:var(--deep);color:#fff;border-top:7px solid var(--gold);padding:18px 22px}
+.footer-brand{display:flex;flex-direction:column;gap:2px}
+.footer-brand strong{font-family:'Zilla Slab','Merriweather',Georgia,serif;font-size:1.05rem;color:#fff}
+.footer-brand span{color:#fff;font-size:.82rem}
+.footer-links{display:flex;gap:8px 14px;flex-wrap:wrap;align-items:center}
+.site-footer a{color:#fff;font-weight:700;text-decoration-color:var(--gold)}
+.site-footer a:hover{color:var(--gold)}
+
+@media(max-width:900px){
+ .site-header{min-height:auto;align-items:center}
+ .uaf-logo{width:min(300px,55vw)}
+ .map-product-name{font-size:1.05rem}
+ .map-workspace{border-top:0}
+}
+@media(max-width:620px){
+ .site-header{padding:10px 12px;display:block}
+ .brand-lockup{gap:10px}
+ .uaf-logo{width:min(255px,70vw);min-width:165px}
+ .map-product-name{font-size:.96rem;padding-left:10px}
+ .header-nav{margin-top:8px;display:grid;grid-template-columns:repeat(3,1fr)}
+ .header-nav a{text-align:center}
+ .map-intro{padding:15px 13px}
+ .map-intro h1{font-size:1.8rem}
+ .footer-links{display:grid;grid-template-columns:1fr 1fr;margin-top:12px}
+}
+@media(prefers-contrast:more){
+ .site-header,.map-intro,.site-footer{background:#111C4E}
+ .result-card,.map-toolbar button,.map-toolbar a,.chip{border-width:2px}
+}
+@media print{
+ .map-intro,.brand-grid{display:none!important}
+}
