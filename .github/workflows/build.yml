@@ -28,24 +28,29 @@ jobs:
 
       - name: Check OMNI runtime structure
         run: |
+          set -e
           test -f .htaccess
           test -f index.php
           test -f accessible.php
           test -f print.php
           test -f admin/index.php
           test -f admin/images.php
+          test -f includes/bootstrap.php
+          test -f includes/header.php
+          test -f includes/footer.php
           test -f assets/css/omni.css
           test -f assets/js/app.js
           test -f assets/images/uaf-logo.svg
           test -f data/map-config.json
-          grep -q 'assets/js/app.js' index.php
-          grep -q 'assets/css/omni.css' index.php
-          grep -q 'leaflet.draw.js' includes/footer.php
-          grep -q 'Save PDF' assets/js/app.js
-          grep -q 'window.print()' assets/js/app.js
-          grep -q 'Publish to GitHub & live map' assets/js/app.js
+          grep -Fq 'assets/css/omni.css' index.php
+          grep -Fq 'assets/js/app.js' includes/footer.php
+          grep -Fq 'leaflet.draw.js' includes/footer.php
+          grep -Fq 'Save PDF' assets/js/app.js
+          grep -Fq 'window.print()' assets/js/app.js
+          grep -Fq 'Publish to GitHub & live map' assets/js/app.js
+          echo 'OMNI/PHP runtime structure is present.'
 
-      - name: Confirm no build-process dependency
+      - name: Confirm runtime has no compiled-app entry point
         run: |
-          ! grep -qE 'src="/src/|vite|react-dom|npm run build' index.php
-          ! grep -qE 'npm install|npm run build|vite build' .github/workflows/build.yml
+          ! grep -qE 'src="/src/|react-dom|createRoot|/@vite' index.php includes/*.php
+          echo 'No React/Vite runtime entry point is referenced.'
