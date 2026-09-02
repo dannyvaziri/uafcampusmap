@@ -1,0 +1,2 @@
+import React from 'react'
+export default function PilotNotice(){return <aside className="pilot-notice" aria-label="Public pilot limitations"><strong>Public pilot.</strong> Campus walking and accessible routes are not yet turn-by-turn. Use posted campus signage and current UAF accessibility resources for verified accessible-route information. Parking enforcement boundaries and construction detours are not authoritative until UAF GIS or operational feeds are added.</aside>}
