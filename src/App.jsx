@@ -7,7 +7,31 @@ import PrintPage from './pages/PrintPage.jsx'
 import {campus} from './data/runtime.js'
 
 function telHref(value){const digits=String(value||'').replace(/\D/g,'');return `tel:${digits.length===10?'+1'+digits:'+'+digits}`}
-function Header(){const ui=campus.ui||{},title=ui.siteTitle||'University of Alaska Fairbanks',subtitle=ui.siteSubtitle||'Campus Map — Public Pilot';return <header className="site-header"><div className="brand-lockup" aria-label={`${title} campus map`}><div className="brand-mark" aria-hidden="true">UAF</div><div><strong>{title}</strong><span>{subtitle}</span></div></div><nav className="header-nav" aria-label="Campus map tools"><NavLink to="/accessible">Text map</NavLink><NavLink to="/print?template=visitor">Print</NavLink></nav></header>}
-function Footer(){const c=campus.ui?.contacts||{},general=c.general||'907-474-7034',admissions=c.admissions||'1-800-478-1823',emergency=c.emergency||'911',corrections=c.corrections||'uaf-web@alaska.edu';return <footer className="site-footer"><div><strong>{campus.ui?.siteTitle||'University of Alaska Fairbanks'}</strong><br/>General information: <a href={telHref(general)}>{general}</a> · Admissions: <a href={telHref(admissions)}>{admissions}</a> · Emergency: <a href={`tel:${emergency.replace(/\D/g,'')}`}>{emergency}</a></div><div>Map corrections: <a href={`mailto:${corrections}`}>{corrections}</a></div></footer>}
-function NotFound(){return <main id="main-content" className="page narrow"><h1>Page not found</h1><p><Link to="/">Return to the campus map</Link>.</p></main>}
+
+function Header(){
+ const ui=campus.ui||{},subtitle=ui.siteSubtitle||'Campus Map'
+ return <header className="site-header">
+  <div className="brand-grid" aria-hidden="true"/>
+  <Link className="brand-lockup" to="/" aria-label="University of Alaska Fairbanks campus map home">
+   <img className="uaf-logo" src="/uaf-logo.svg" alt="University of Alaska Fairbanks"/>
+   <span className="map-product-name">{subtitle}</span>
+  </Link>
+  <nav className="header-nav" aria-label="Campus map tools">
+   <NavLink to="/" end>Map</NavLink>
+   <NavLink to="/accessible">Text map</NavLink>
+   <NavLink to="/print?template=visitor">Print</NavLink>
+  </nav>
+ </header>
+}
+
+function Footer(){
+ const c=campus.ui?.contacts||{},general=c.general||'907-474-7034',admissions=c.admissions||'1-800-478-1823',emergency=c.emergency||'911',corrections=c.corrections||'uaf-web@alaska.edu'
+ return <footer className="site-footer">
+  <div className="footer-brand"><strong>University of Alaska Fairbanks</strong><span>Troth Yeddha' Campus · Fairbanks, Alaska</span></div>
+  <div className="footer-links"><a href="https://www.uaf.edu/" target="_blank" rel="noreferrer">UAF home</a><a href={telHref(general)}>General {general}</a><a href={telHref(admissions)}>Admissions {admissions}</a><a href={`tel:${emergency.replace(/\D/g,'')}`}>Emergency {emergency}</a><a href={`mailto:${corrections}`}>Map corrections</a></div>
+ </footer>
+}
+
+function NotFound(){return <main id="main-content" className="page narrow"><p className="eyebrow">UAF CAMPUS MAP</p><h1>That path doesn't lead anywhere.</h1><p><Link to="/">Return to the campus map</Link>.</p></main>}
+
 export default function App(){return <><a className="skip-link" href="#main-content">Skip to main content</a><Header/><Routes><Route path="/" element={<MapPage/>}/><Route path="/accessible" element={<AccessiblePage/>}/><Route path="/admin" element={<AdminPage/>}/><Route path="/print" element={<PrintPage/>}/><Route path="*" element={<NotFound/>}/></Routes><Footer/></>}
