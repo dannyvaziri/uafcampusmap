@@ -55,11 +55,30 @@
   },
   "buildingOverrides": {
     "akasofu": {
-      "latitude": 64.8592314,
-      "longitude": -147.851091
+      "latitude": 64.8590582,
+      "longitude": -147.851193
     }
   },
-  "customBuildings": [],
+  "customBuildings": [
+    {
+      "id": "custom-building-6108594",
+      "official_name": "New building",
+      "common_name": "Planitarium",
+      "abbreviation": "",
+      "category": "service",
+      "address": "",
+      "latitude": 64.85842,
+      "longitude": -147.8437069,
+      "geometry_status": "admin custom — verify UAF GIS",
+      "source_url": "",
+      "services": [],
+      "search_terms": [],
+      "recommended_parking": [],
+      "marker_label": "",
+      "marker_color": "#236192",
+      "visible": true
+    }
+  ],
   "parkingOverrides": {},
   "customParking": [],
   "contentOverrides": {},
@@ -136,6 +155,44 @@
             [
               -147.843275,
               64.858564
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shape-1788316169163",
+        "name": "Planitarium footprint",
+        "kind": "building-footprint",
+        "visible": true,
+        "stroke": "#236192",
+        "fill": "#236192",
+        "weight": 3,
+        "opacity": 0.9,
+        "fillOpacity": 0.16,
+        "building_id": "custom-building-6108594"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -147.843297,
+              64.858583
+            ],
+            [
+              -147.843297,
+              64.858583
+            ],
+            [
+              -147.843297,
+              64.858583
+            ],
+            [
+              -147.843297,
+              64.858583
             ]
           ]
         ]
