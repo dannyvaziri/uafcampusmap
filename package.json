@@ -1,12 +1,14 @@
 {
   "name": "uaf-campus-map",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
     "dev": "vite",
+    "verify": "node scripts/verify.mjs",
     "build": "vite build",
+    "check": "npm run verify && npm run build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
