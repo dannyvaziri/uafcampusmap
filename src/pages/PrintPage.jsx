@@ -1,25 +1,79 @@
-import React,{useEffect} from 'react'
+import React,{useEffect,useMemo,useRef,useState} from 'react'
 import {Link,useSearchParams} from 'react-router-dom'
+import L from 'leaflet'
 import {QRCodeSVG} from 'qrcode.react'
-import {campus} from '../data/runtime.js'
-import {exactPoint,popularIds} from '../lib.js'
+import {campus,shapeStyle} from '../data/runtime.js'
+import {exactPoint} from '../lib.js'
 
-const templates={visitor:{label:'8.5×11 visitor map',paper:'letter'},full:{label:'11×17 full campus map',paper:'ledger'},accessibility:{label:'8.5×11 accessibility map',paper:'letter'},event:{label:'Event-specific map',paper:'letter'},bw:{label:'Black-and-white office map',paper:'letter'},directions:{label:'Directional handout',paper:'letter'}}
+const PAPER={ledger:{label:'11×17',page:'17in 11in'},letter:{label:'8.5×11',page:'11in 8.5in'}}
+const boundsForCampus=()=>{const pts=campus.buildings.filter(exactPoint).map(b=>[Number(b.latitude),Number(b.longitude)]);return pts.length?L.latLngBounds(pts):L.latLngBounds([[64.849,-147.855],[64.862,-147.812]])}
+const safeColor=v=>/^#[0-9a-f]{3,8}$/i.test(String(v||''))?String(v):'#236192'
+
+function buildingLabel(b){return `<span class="print-building-dot" style="--pin:${safeColor(b.marker_color||campus.ui?.colors?.marker)}"></span><span>${String(b.common_name||b.official_name||'Building').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}</span>`}
 
 export default function PrintPage(){
- const[params,setParams]=useSearchParams();const template=templates[params.get('template')]?params.get('template'):'visitor';const place=params.get('place')||'signers';const building=campus.buildings.find(b=>b.id===place)||campus.buildings[0];const paper=templates[template].paper
- useEffect(()=>{document.body.dataset.printPaper=paper;return()=>{delete document.body.dataset.printPaper}},[paper])
- function setTemplate(v){const n=new URLSearchParams(params);n.set('template',v);if(v!=='directions')n.delete('place');setParams(n)}
- function setPlace(v){const n=new URLSearchParams(params);n.set('template','directions');n.set('place',v);setParams(n)}
- return <main id="main-content" className="print-page"><div className="print-tools" aria-label="Print controls"><Link to="/">Back to map</Link><label>Template<select value={template} onChange={e=>setTemplate(e.target.value)}>{Object.entries(templates).map(([k,v])=><option value={k} key={k}>{v.label}</option>)}</select></label>{template==='directions'&&<label>Destination<select value={building.id} onChange={e=>setPlace(e.target.value)}>{campus.buildings.map(b=><option key={b.id} value={b.id}>{b.common_name}</option>)}</select></label>}<button type="button" className="print-button" onClick={()=>window.print()}>Print / Save PDF</button></div><Sheet template={template} building={building}/></main>
-}
+ const [params,setParams]=useSearchParams()
+ const [mode,setMode]=useState(params.get('mode')==='selected'?'selected':'full')
+ const [paper,setPaper]=useState(params.get('paper')==='letter'?'letter':'ledger')
+ const [showBuildings,setShowBuildings]=useState(true),[showParking,setShowParking]=useState(true),[showShapes,setShowShapes]=useState(true)
+ const mapNode=useRef(null),mapRef=useRef(null),overlayRef=useRef(null)
+ const liveUrl=typeof window!=='undefined'?window.location.origin:'https://www.uaf.edu/campusmap/'
+ const locatedBuildings=useMemo(()=>campus.buildings.filter(exactPoint),[])
 
-function Sheet({template,building}){
- const full=template==='full',bw=template==='bw',visitor=campus.parking.filter(p=>p.type==='visitor_short_term').slice(0,8),liveUrl=typeof window!=='undefined'?window.location.origin:'https://www.uaf.edu/campusmap/'
- return <article className={`print-sheet ${full?'ledger':'letter'} ${bw?'bw':''}`}><header><div className="print-brand"><img src="/uaf-logo.svg" alt="University of Alaska Fairbanks"/><div><span>CAMPUS MAP</span><h1>{templates[template].label}</h1></div></div><div>Updated Sept. 1, 2026<br/>{new URL(liveUrl).host}</div></header><div className="print-layout"><Schematic template={template} building={building}/><aside>{template==='directions'?<><h2>{building.common_name}</h2><p><strong>{building.address}</strong></p><ol><li>Use the live campus map or external directions to reach UAF.</li><li>Follow posted campus wayfinding to {building.common_name}.</li><li>Check current parking restrictions before leaving your vehicle.</li><li>Use current UAF accessibility resources for verified accessible-entry information.</li></ol></>:template==='accessibility'?<><h2>Accessibility resources</h2><p>Use current UAF accessibility resources for verified facility information. Turn-by-turn accessible routing is not claimed in this pilot.</p><p>Accessible parking requires the appropriate UAF permit/decal in addition to an ADA permit.</p></>:template==='event'?<><h2>Event information</h2><div className="event-fields"><span>Event: __________</span><span>Date: __________</span><span>Venue: __________</span><span>Parking: ________</span><span>Drop-off: _______</span><span>Contact: ________</span></div></>:<><h2>Popular destinations</h2>{popularIds.slice(0,6).map(id=>{const b=campus.buildings.find(x=>x.id===id);return b?<p key={id}><strong>{b.common_name}</strong><br/>{b.address}</p>:null})}<h2>Visitor parking</h2>{visitor.map(p=><p key={p.id}><strong>{p.code} — {p.name}</strong><br/>{p.restrictions}</p>)}</>}</aside></div><footer><div><strong>University of Alaska Fairbanks</strong><br/>General info 907-474-7034 · Admissions 1-800-478-1823 · Emergency 911<br/>Map issues: uaf-web@alaska.edu</div><div className="north">↑<br/>North</div><QRCodeSVG value={`${liveUrl}/`} size={90} title="QR code to this UAF campus map"/></footer></article>
-}
+ useEffect(()=>{
+  const id='uaf-print-page-style';let style=document.getElementById(id);if(!style){style=document.createElement('style');style.id=id;document.head.appendChild(style)}
+  style.textContent=`@page{size:${PAPER[paper].page};margin:.25in}`
+  document.body.dataset.printPaper=paper
+  return()=>{delete document.body.dataset.printPaper}
+ },[paper])
 
-function Schematic({template,building}){
- const pts=campus.buildings.filter(exactPoint),minLat=64.849,maxLat=64.862,minLon=-147.855,maxLon=-147.812,xy=b=>[65+(b.longitude-minLon)/(maxLon-minLon)*870,560-(b.latitude-minLat)/(maxLat-minLat)*485],shown=template==='directions'?[building].filter(exactPoint):pts
- return <div className="print-map" aria-label="Schematic campus map, not to scale"><svg viewBox="0 0 1000 620" role="img" aria-label="Schematic campus map, not to scale"><rect width="1000" height="620" fill="#f7f5e9"/><path d="M30 500 C260 430 620 470 970 420" className="road major"/><path d="M140 115 C350 150 585 145 870 90" className="road major"/><path d="M665 40 C655 235 695 365 905 515" className="road major"/><path d="M240 425 C420 345 610 315 820 332" className="road minor"/><text x="55" y="482">Tanana Loop</text><text x="715" y="72">Yukon Drive</text>{shown.map(b=>{const[x,y]=xy(b);return <g transform={`translate(${x},${y})`} key={b.id}><circle r="10" className="print-pin"/><text x="14" y="4">{b.abbreviation||b.common_name.slice(0,10)}</text></g>})}{template==='accessibility'&&<path d="M260 420 C420 350 570 320 740 270" className="access-route"/>}<text x="36" y="36" className="schematic-label">Schematic / not to scale</text></svg></div>
+ useEffect(()=>{
+  if(!mapNode.current||mapRef.current)return
+  const map=L.map(mapNode.current,{center:campus.ui?.map?.center||[64.857,-147.829],zoom:Number(campus.ui?.map?.zoom||16),zoomControl:true,attributionControl:true,keyboard:true,preferCanvas:true})
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,attribution:'© OpenStreetMap contributors',crossOrigin:true}).addTo(map)
+  overlayRef.current=L.layerGroup().addTo(map);mapRef.current=map
+  map.fitBounds(boundsForCampus(),{padding:[28,28],maxZoom:16})
+  setTimeout(()=>map.invalidateSize(),0)
+  return()=>{map.remove();mapRef.current=null;overlayRef.current=null}
+ },[])
+
+ useEffect(()=>{
+  const map=mapRef.current,group=overlayRef.current;if(!map||!group)return;group.clearLayers()
+  if(showShapes){
+   const shapes=(campus.custom_shapes||[]).filter(s=>s?.properties?.visible!==false)
+   if(shapes.length)L.geoJSON({type:'FeatureCollection',features:shapes},{style:f=>({...shapeStyle(f),weight:Math.max(2,Number(f.properties?.weight||3))}),pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:6,...shapeStyle(f)}),onEachFeature:(f,l)=>{if(f.properties?.name)l.bindTooltip(f.properties.name,{permanent:false})}}).addTo(group)
+  }
+  if(showBuildings){locatedBuildings.forEach(b=>{const m=L.circleMarker([b.latitude,b.longitude],{radius:5,color:'#fff',weight:2,fillColor:safeColor(b.marker_color||campus.ui?.colors?.marker),fillOpacity:1}).addTo(group);m.bindTooltip(buildingLabel(b),{permanent:true,direction:'right',offset:[7,0],className:'print-building-label',opacity:1})})}
+  if(showParking){
+   const parkingShapes=(campus.custom_shapes||[]).filter(s=>s?.properties?.kind==='parking-area'&&s.properties?.visible!==false)
+   parkingShapes.forEach(f=>L.geoJSON(f,{style:()=>({color:safeColor(campus.ui?.colors?.parking||'#71984A'),weight:2,fillColor:safeColor(campus.ui?.colors?.parking||'#71984A'),fillOpacity:.16})}).addTo(group))
+  }
+ },[showBuildings,showParking,showShapes,locatedBuildings])
+
+ useEffect(()=>{if(mode==='full'&&mapRef.current)mapRef.current.fitBounds(boundsForCampus(),{padding:[28,28],maxZoom:16})},[mode])
+
+ function updateParam(key,value){const n=new URLSearchParams(params);n.set(key,value);setParams(n,{replace:true})}
+ function changeMode(v){setMode(v);updateParam('mode',v);setTimeout(()=>mapRef.current?.invalidateSize(),0)}
+ function changePaper(v){setPaper(v);updateParam('paper',v);setTimeout(()=>mapRef.current?.invalidateSize(),0)}
+ function resetFull(){setMode('full');updateParam('mode','full');mapRef.current?.fitBounds(boundsForCampus(),{padding:[28,28],maxZoom:16})}
+ function printNow(){setTimeout(()=>window.print(),80)}
+
+ return <main id="main-content" className={`print-page true-print ${paper} ${mode}`}>
+  <div className="print-tools" aria-label="Print map controls">
+   <Link to="/">Back to map</Link>
+   <label>Area<select value={mode} onChange={e=>changeMode(e.target.value)}><option value="full">Full campus</option><option value="selected">Selected area / current view</option></select></label>
+   <label>Paper<select value={paper} onChange={e=>changePaper(e.target.value)}><option value="ledger">11×17</option><option value="letter">8.5×11</option></select></label>
+   <label className="print-toggle"><input type="checkbox" checked={showBuildings} onChange={e=>setShowBuildings(e.target.checked)}/> Building names</label>
+   <label className="print-toggle"><input type="checkbox" checked={showParking} onChange={e=>setShowParking(e.target.checked)}/> Parking</label>
+   <label className="print-toggle"><input type="checkbox" checked={showShapes} onChange={e=>setShowShapes(e.target.checked)}/> Map shapes</label>
+   <button type="button" onClick={resetFull}>Show full campus</button>
+   <button type="button" className="print-button" onClick={printNow}>Print / Save</button>
+  </div>
+  <section className="print-live-shell">
+   <header className="print-live-header"><div className="print-brand"><img src="/uaf-logo.svg" alt="University of Alaska Fairbanks"/><div><span>CAMPUS MAP</span><h1>{mode==='full'?'Full campus map':'Selected campus area'}</h1></div></div><div className="print-meta"><strong>{PAPER[paper].label}</strong><span>{new URL(liveUrl).host}</span></div></header>
+   <div className="print-selection-note">{mode==='selected'?<><strong>Selected area:</strong> Pan and zoom the map until it shows exactly what you want, then click <strong>Print / Save</strong>.</>:<><strong>Full campus:</strong> The map automatically fits the main campus. Switch to Selected area to print a smaller section.</>}</div>
+   <div ref={mapNode} className="print-live-map" aria-label="Detailed printable UAF campus map with OpenStreetMap road names, building labels and map overlays"/>
+   <footer className="print-live-footer"><div><strong>University of Alaska Fairbanks</strong><br/>General information 907-474-7034 · Admissions 1-800-478-1823 · Emergency 911<br/>Map corrections: uaf-web@alaska.edu</div><div className="print-legend"><span><i className="legend-building"/>Building</span><span><i className="legend-parking"/>Parking / mapped area</span></div><div className="north">↑<br/>North</div><QRCodeSVG value={`${liveUrl}/`} size={72} title="QR code to the live UAF campus map"/></footer>
+  </section>
+ </main>
 }
