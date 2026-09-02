@@ -55,8 +55,8 @@
   },
   "buildingOverrides": {
     "akasofu": {
-      "latitude": 64.8591995,
-      "longitude": -147.8510052
+      "latitude": 64.8592314,
+      "longitude": -147.851091
     }
   },
   "customBuildings": [],
@@ -106,15 +106,15 @@
       "type": "Feature",
       "properties": {
         "id": "shape-1788315415210",
-        "name": "Akasofu Building footprint",
+        "name": "Planitarium",
         "kind": "building-footprint",
         "visible": true,
-        "stroke": "#236192",
+        "stroke": "#c9bfb3",
         "fill": "#d9d0c9",
-        "weight": 3,
+        "weight": 1,
         "opacity": 0.9,
         "fillOpacity": 1,
-        "building_id": "akasofu",
+        "building_id": "museum",
         "parking_id": "parking-9j-36"
       },
       "geometry": {
