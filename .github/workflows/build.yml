@@ -2,7 +2,7 @@ name: PHP vanilla map checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, qa-php-map-20260902]
   pull_request:
     branches: [main]
 
@@ -12,9 +12,40 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Validate PHP entry point
-        run: php -l index.php
-      - name: Validate browser JavaScript
-        run: node --check app.js
-      - name: Check required routes and assets
-        run: test -f .htaccess && test -f omni.css && test -f public/uaf-logo.svg
+
+      - name: Lint PHP routes and shared includes
+        run: |
+          php -l index.php
+          php -l accessible.php
+          php -l print.php
+          php -l admin/index.php
+          php -l admin/images.php
+          for file in includes/*.php; do php -l "$file"; done
+
+      - name: Validate JSON data
+        run: |
+          php -r '$files = glob("data/*.json"); foreach ($files as $file) { json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR); echo "valid $file\n"; }'
+
+      - name: Check OMNI runtime structure
+        run: |
+          test -f .htaccess
+          test -f index.php
+          test -f accessible.php
+          test -f print.php
+          test -f admin/index.php
+          test -f admin/images.php
+          test -f assets/css/omni.css
+          test -f assets/js/app.js
+          test -f assets/images/uaf-logo.svg
+          test -f data/map-config.json
+          grep -q 'assets/js/app.js' index.php
+          grep -q 'assets/css/omni.css' index.php
+          grep -q 'leaflet.draw.js' includes/footer.php
+          grep -q 'Save PDF' assets/js/app.js
+          grep -q 'window.print()' assets/js/app.js
+          grep -q 'Publish to GitHub & live map' assets/js/app.js
+
+      - name: Confirm no build-process dependency
+        run: |
+          ! grep -qE 'src="/src/|vite|react-dom|npm run build' index.php
+          ! grep -qE 'npm install|npm run build|vite build' .github/workflows/build.yml
