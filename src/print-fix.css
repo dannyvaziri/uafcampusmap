@@ -20,6 +20,7 @@
  .print-live-footer svg{width:.48in!important;height:.48in!important}
 .print-building-label{box-shadow:none!important}
 }
+.print-tools .pdf-button{background:#fff;border-color:#fff;color:var(--deep)}
 
 /* UAF reference-map print composition: landscape map, coordinate border, and right-side key. */
 .true-print .print-live-shell{position:relative;width:min(16.5in,calc(100vw - 36px));aspect-ratio:960/552;display:grid;grid-template-columns:minmax(0,1fr) 1.25in;grid-template-rows:.18in minmax(0,1fr) auto;background:#fff;border:1px solid #222;box-shadow:0 10px 30px #0003;overflow:hidden}
