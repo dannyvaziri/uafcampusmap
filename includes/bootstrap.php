@@ -72,13 +72,14 @@ function uaf_find_parking(array $parking, string $id): ?array {
 function uaf_infer_legend_key(array $shape, array $legendIndex, array $parking): string {
     $props = is_array($shape['properties'] ?? null) ? $shape['properties'] : [];
     $stored = (string) ($props['legend_key'] ?? '');
-    if ($stored !== '' && isset($legendIndex[$stored])) return $stored;
     $kind = (string) ($props['kind'] ?? '');
     if ($kind === 'building-footprint' || !empty($props['building_id'])) return 'building';
     if ($kind === 'parking-area' || !empty($props['parking_id'])) {
+        if ($stored !== '' && str_starts_with($stored, 'parking_') && isset($legendIndex[$stored])) return $stored;
         $row = uaf_find_parking($parking, (string) ($props['parking_id'] ?? ''));
         return uaf_parking_legend_key($row);
     }
+    if ($stored !== '' && isset($legendIndex[$stored])) return $stored;
     return match ($kind) {
         'trail' => 'trail',
         'construction', 'closure' => 'construction',
