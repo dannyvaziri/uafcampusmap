@@ -55,6 +55,8 @@ export function applyMapConfig(input){
   campus.custom_shapes=cfg.shapes.filter(s=>s?.properties?.visible!==false)
   const c=cfg.settings.colors
   const root=document.documentElement
+  root.style.setProperty('--blue',c.blue)
+  root.style.setProperty('--gold',c.gold)
   root.style.setProperty('--uaf-blue',c.blue)
   root.style.setProperty('--uaf-gold',c.gold)
   root.style.setProperty('--map-marker',c.marker)
