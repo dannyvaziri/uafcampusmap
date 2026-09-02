@@ -1,2 +1,3 @@
 import React from 'react'
-export default function PilotNotice(){return <aside className="pilot-notice" aria-label="Public pilot limitations"><strong>Public pilot.</strong> Campus walking and accessible routes are not yet turn-by-turn. Use posted campus signage and current UAF accessibility resources for verified accessible-route information. Parking enforcement boundaries and construction detours are not authoritative until UAF GIS or operational feeds are added.</aside>}
+import {campus} from '../data/runtime.js'
+export default function PilotNotice(){const ui=campus.ui||{};return <aside className="pilot-notice" aria-label="Public pilot limitations"><strong>{ui.pilotTitle||'Public pilot.'}</strong> {ui.pilotNotice||'Campus walking and accessible routes are not yet turn-by-turn. Use posted campus signage and current UAF accessibility resources for verified accessible-route information.'}</aside>}
