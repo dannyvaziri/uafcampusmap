@@ -53,7 +53,12 @@
       "corrections": "uaf-web@alaska.edu"
     }
   },
-  "buildingOverrides": {},
+  "buildingOverrides": {
+    "akasofu": {
+      "latitude": 64.8584337,
+      "longitude": -147.8437579
+    }
+  },
   "customBuildings": [],
   "parkingOverrides": {},
   "customParking": [],
@@ -62,40 +67,75 @@
     {
       "type": "Feature",
       "properties": {
-        "id": "shape-1788314691384",
-        "name": "Planitarium",
+        "id": "shape-1788315411694",
+        "name": "Akasofu Building footprint",
         "kind": "building-footprint",
         "visible": true,
-        "stroke": "#c9bdae",
+        "stroke": "#734a09",
         "fill": "#d9d0c9",
-        "weight": 3,
+        "weight": 2,
         "opacity": 0.9,
-        "fillOpacity": 0.16,
-        "building_id": "akasofu"
+        "fillOpacity": 1,
+        "building_id": "museum"
       },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
             [
-              -147.843302,
-              64.858284
-            ],
-            [
-              -147.843967,
-              64.858268
-            ],
-            [
-              -147.843946,
-              64.858569
+              -147.843275,
+              64.858564
             ],
             [
               -147.843275,
-              64.858569
+              64.858564
             ],
             [
-              -147.843302,
-              64.858284
+              -147.843275,
+              64.858564
+            ],
+            [
+              -147.843275,
+              64.858564
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shape-1788315415210",
+        "name": "Akasofu Building footprint",
+        "kind": "building-footprint",
+        "visible": true,
+        "stroke": "#236192",
+        "fill": "#d9d0c9",
+        "weight": 3,
+        "opacity": 0.9,
+        "fillOpacity": 1,
+        "building_id": "akasofu",
+        "parking_id": "parking-9j-36"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -147.843275,
+              64.858564
+            ],
+            [
+              -147.844107,
+              64.858259
+            ],
+            [
+              -147.844112,
+              64.858568
+            ],
+            [
+              -147.843275,
+              64.858564
             ]
           ]
         ]
