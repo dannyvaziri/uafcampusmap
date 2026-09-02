@@ -6,6 +6,7 @@ import './styles.css'
 import './brand.css'
 import './brand-extras.css'
 import './admin-wizard.css'
+import './admin-editor.css'
 import App from './App.jsx'
 import {applyMapConfig,loadPublishedConfig} from './data/runtime.js'
 
