@@ -8,17 +8,15 @@
   const states = new WeakMap();
   const imageryPattern = /ibasemaps-api\.arcgis\.com\/arcgis\/rest\/services\/World_Imagery\/MapServer\/tile/i;
   const referencePattern = /services\.arcgisonline\.com\/ArcGIS\/rest\/services\/Reference\/(World_Transportation|World_Boundaries_and_Places)\/MapServer\/tile/i;
-  const topoUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+  const streetUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
   const fallbackUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   function createNormalLayer() {
-    const primary = originalTileLayer(topoUrl, {
+    return originalTileLayer(streetUrl, {
       maxZoom: 19,
       crossOrigin: true,
-      attribution: 'Basemap © Esri, HERE, Garmin, FAO, NOAA, USGS'
+      attribution: 'Basemap © Esri, HERE, Garmin, USGS, NGA, EPA, USDA, NPS'
     });
-    primary._uafFallbackActivated = false;
-    return primary;
   }
 
   function createFallbackLayer() {
