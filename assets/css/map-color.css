@@ -1,0 +1,5 @@
+/* Public-map color hotfix: the default Map view must read as a real campus map, not a gray canvas. */
+body[data-page="map"] .leaflet-tile-pane{filter:none!important}
+body[data-page="map"] .leaflet-container{background:#d9e8ef}
+body[data-page="map"] .map{background:#d9e8ef}
+body[data-page="map"] .map-column{background:#d9e8ef}
