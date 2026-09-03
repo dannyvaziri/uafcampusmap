@@ -21,6 +21,9 @@ require __DIR__ . '/includes/bootstrap.php';
 <link rel="stylesheet" href="/assets/css/omni.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
 <link rel="stylesheet" href="/assets/css/overlays.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
 <link rel="stylesheet" href="/assets/css/basemap.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
+<?php if ($page === 'map'): ?>
+<link rel="stylesheet" href="/assets/css/experience.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
+<?php endif; ?>
 </head>
 <body data-page="<?= htmlspecialchars($page, ENT_QUOTES) ?>">
 <?php require __DIR__ . '/includes/header.php'; ?>
