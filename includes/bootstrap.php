@@ -130,6 +130,17 @@ function uaf_sanitize_config(mixed $input, array $legend = [], array $parking = 
     return $config;
 }
 
+function uaf_public_headers(): void {
+    static $sent = false;
+    if ($sent) return;
+    $sent = true;
+    header('X-Content-Type-Options: nosniff');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: geolocation=(self), camera=(), microphone=()');
+}
+
+uaf_public_headers();
+
 $uafRoot = dirname(__DIR__);
 $buildings = [];
 foreach (glob($uafRoot . '/data/buildings-*.json') ?: [] as $file) {
