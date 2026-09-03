@@ -147,7 +147,7 @@
     if (g.type === 'Polygon') return Array.isArray(g.coordinates?.[0]) && g.coordinates[0].length >= 4 && g.coordinates[0].every(validCoordinate);
     return false;
   }
-  function shapes() { return (getData().config?.shapes || []).filter(validFeature); }
+  function shapes() { return (getData().config?.shapes || []).filter(feature => feature?.properties?.visible !== false && validFeature(feature)); }
   function shapeByBuilding(id) { return shapes().find(f => f.properties?.building_id === id && (f.properties?.kind === 'building-footprint' || f.properties?.legend_key === 'building')); }
   function shapeByParking(id, code) { return shapes().find(f => f.properties?.parking_id === id || f.properties?.parking_id === code); }
 
