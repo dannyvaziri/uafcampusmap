@@ -55,6 +55,9 @@ $experienceVersion = (string) max(
 <link rel="stylesheet" href="/assets/css/omni.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
 <link rel="stylesheet" href="/assets/css/overlays.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
 <link rel="stylesheet" href="/assets/css/basemap.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
+<?php if ($page === 'overlays'): ?>
+<link rel="stylesheet" href="/assets/css/overlay-import.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
+<?php endif; ?>
 <?php if ($page === 'map'): ?>
 <link rel="stylesheet" href="/assets/css/experience.css?v=<?= htmlspecialchars($experienceVersion, ENT_QUOTES) ?>">
 <link rel="stylesheet" href="/assets/css/map-color.css?v=<?= htmlspecialchars($experienceVersion, ENT_QUOTES) ?>">
