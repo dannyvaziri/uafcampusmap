@@ -25,7 +25,7 @@ jobs:
         run: |
           node --check assets/js/experience.js
           node --check assets/js/basemap.js
-          node --check assets/js/live-fixes.js
+          node --check assets/js/surface-fix.js
           node --check assets/js/app.js
           echo 'Public runtime JavaScript parses without a build step.'
 
@@ -38,7 +38,7 @@ jobs:
           grep -Fq 'assets/css/live-fixes.css' /tmp/map.html
           grep -Fq 'assets/css/map-polish.css' /tmp/map.html
           grep -Fq 'assets/js/experience.js' /tmp/map.html
-          grep -Fq 'assets/js/live-fixes.js' /tmp/map.html
+          grep -Fq 'assets/js/surface-fix.js' /tmp/map.html
           grep -Fq 'data-map-command="locations"' /tmp/map.html
           grep -Fq 'data-map-command="layers"' /tmp/map.html
           grep -Fq 'data-map-command="layer:Parking"' /tmp/map.html
@@ -57,8 +57,9 @@ jobs:
           grep -Fq 'filter:none!important' assets/css/map-color.css
           grep -Fq 'filter:none!important' assets/css/live-fixes.css
           grep -Fq 'filter:none!important' assets/css/map-polish.css
-          grep -Fq "kind === 'parking-area'" assets/js/live-fixes.js
-          grep -Fq "kind === 'building-footprint'" assets/js/live-fixes.js
+          grep -Fq "kind === 'parking-area'" assets/js/surface-fix.js
+          grep -Fq "kind === 'building-footprint'" assets/js/surface-fix.js
+          grep -Fq "fillColor:'#aeb8bd'" assets/js/surface-fix.js
           grep -Fq 'uaf-building-shadow' assets/js/experience.js
           grep -Fq 'uaf-building-roof' assets/js/experience.js
           grep -Fq 'uaf-layer-highlight' assets/js/experience.js
