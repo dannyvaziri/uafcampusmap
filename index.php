@@ -1,6 +1,34 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/includes/bootstrap.php';
+
+$locationContent = uaf_read_json(__DIR__ . '/data/location-content.json', ['locations' => []]);
+$locationAdditions = is_array($locationContent['locations'] ?? null) ? $locationContent['locations'] : [];
+foreach ($buildings as &$building) {
+    if (!is_array($building) || empty($building['id'])) continue;
+    $extra = $locationAdditions[(string) $building['id']] ?? null;
+    if (!is_array($extra)) continue;
+    $searchTerms = array_values(array_unique(array_filter(array_merge(
+        is_array($building['search_terms'] ?? null) ? $building['search_terms'] : [],
+        is_array($extra['aliases'] ?? null) ? $extra['aliases'] : [],
+        is_array($extra['departments'] ?? null) ? $extra['departments'] : [],
+        is_array($extra['services'] ?? null) ? $extra['services'] : []
+    ))));
+    $services = array_values(array_unique(array_filter(array_merge(
+        is_array($building['services'] ?? null) ? $building['services'] : [],
+        is_array($extra['services'] ?? null) ? $extra['services'] : [],
+        is_array($extra['departments'] ?? null) ? $extra['departments'] : []
+    ))));
+    $building = array_merge($building, $extra, ['search_terms' => $searchTerms, 'services' => $services]);
+}
+unset($building);
+$experienceVersion = (string) max(
+    (int) $assetVersion,
+    (int) (@filemtime(__DIR__ . '/assets/css/experience.css') ?: 0),
+    (int) (@filemtime(__DIR__ . '/assets/js/experience.js') ?: 0),
+    (int) (@filemtime(__DIR__ . '/data/location-content.json') ?: 0),
+    (int) (@filemtime(__DIR__ . '/data/modes.json') ?: 0)
+);
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -22,7 +50,7 @@ require __DIR__ . '/includes/bootstrap.php';
 <link rel="stylesheet" href="/assets/css/overlays.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
 <link rel="stylesheet" href="/assets/css/basemap.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
 <?php if ($page === 'map'): ?>
-<link rel="stylesheet" href="/assets/css/experience.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
+<link rel="stylesheet" href="/assets/css/experience.css?v=<?= htmlspecialchars($experienceVersion, ENT_QUOTES) ?>">
 <?php endif; ?>
 </head>
 <body data-page="<?= htmlspecialchars($page, ENT_QUOTES) ?>">
