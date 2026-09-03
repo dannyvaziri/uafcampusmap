@@ -1,0 +1,12 @@
+body[data-page="map"] .leaflet-tile-pane{filter:saturate(1.06) contrast(1.04) brightness(.995)!important}
+body[data-page="map"] .site-header .brand{gap:9px}
+body[data-page="map"] .site-header .brand img{filter:none!important;width:180px!important;max-width:25vw!important;height:auto;background:#fff;border-radius:4px;padding:3px 6px;box-shadow:0 0 0 1px rgba(255,255,255,.32)}
+body[data-page="map"] .site-header .brand span{font-size:.98rem}
+body[data-page="map"] .panel{width:min(348px,calc(100vw - 32px))}
+body[data-page="map"]{--map-panel-width:348px}
+body[data-page="map"] .map-page>.notice{max-width:min(560px,calc(100vw - var(--map-panel-width) - 70px));background:rgba(255,251,232,.94)}
+body[data-page="map"] .uaf-building-label{background:rgba(255,255,255,.9);box-shadow:0 1px 4px rgba(24,48,62,.16)}
+body[data-page="map"] .leaflet-control-zoom a{background:#fff;color:#173b55}
+body[data-page="map"] .leaflet-control-zoom a:hover{background:#eef6fa}
+@media(max-width:760px){body[data-page="map"] .site-header .brand img{width:132px!important;max-width:42vw!important;padding:2px 4px}body[data-page="map"] .panel{width:calc(100vw - 20px)}body[data-page="map"]{--map-panel-width:calc(100vw - 20px)}}
+@media print{body[data-page="map"] .site-header .brand img{filter:none!important}}
