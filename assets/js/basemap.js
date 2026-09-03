@@ -8,30 +8,25 @@
   const states = new WeakMap();
   const imageryPattern = /ibasemaps-api\.arcgis\.com\/arcgis\/rest\/services\/World_Imagery\/MapServer\/tile/i;
   const referencePattern = /services\.arcgisonline\.com\/ArcGIS\/rest\/services\/Reference\/(World_Transportation|World_Boundaries_and_Places)\/MapServer\/tile/i;
-  const normalBaseUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
-  const normalRoadUrl = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}';
-  const normalPlaceUrl = 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}';
+  const topoUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
+  const fallbackUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
-  function createNormalLayers() {
-    return [
-      originalTileLayer(normalBaseUrl, {
-        maxZoom: 19,
-        crossOrigin: true,
-        attribution: 'Basemap © Esri, HERE, Garmin, FAO, NOAA, USGS'
-      }),
-      originalTileLayer(normalRoadUrl, {
-        maxZoom: 20,
-        crossOrigin: true,
-        opacity: 0.62,
-        attribution: 'Transportation reference © Esri'
-      }),
-      originalTileLayer(normalPlaceUrl, {
-        maxZoom: 20,
-        crossOrigin: true,
-        opacity: 0.48,
-        attribution: 'Reference labels © Esri'
-      })
-    ];
+  function createNormalLayer() {
+    const primary = originalTileLayer(topoUrl, {
+      maxZoom: 19,
+      crossOrigin: true,
+      attribution: 'Basemap © Esri, HERE, Garmin, FAO, NOAA, USGS'
+    });
+    primary._uafFallbackActivated = false;
+    return primary;
+  }
+
+  function createFallbackLayer() {
+    return originalTileLayer(fallbackUrl, {
+      maxZoom: 20,
+      crossOrigin: true,
+      attribution: '© OpenStreetMap contributors'
+    });
   }
 
   function updateControl(state) {
@@ -47,6 +42,20 @@
     window.dispatchEvent(new CustomEvent('uaf:basemapchange', {detail:{map,mode}}));
   }
 
+  function ensureNormalVisible(map, state) {
+    if (state.fallback && map.hasLayer(state.fallback)) map.removeLayer(state.fallback);
+    if (!map.hasLayer(state.normal)) state.normal.addTo(map);
+  }
+
+  function activateFallback(map, state) {
+    if (state.mode !== 'map' || state.fallbackActive) return;
+    state.fallbackActive = true;
+    if (map.hasLayer(state.normal)) map.removeLayer(state.normal);
+    if (!state.fallback) state.fallback = createFallbackLayer();
+    if (!map.hasLayer(state.fallback)) state.fallback.addTo(map);
+    window.dispatchEvent(new CustomEvent('uaf:basemapfallback', {detail:{map}}));
+  }
+
   function setMode(map, mode) {
     const state = states.get(map);
     if (!state) return;
@@ -54,13 +63,19 @@
     state.mode = mode === 'satellite' && state.imagery ? 'satellite' : 'map';
 
     if (state.mode === 'satellite') {
-      state.normal.forEach(layer => { if (map.hasLayer(layer)) map.removeLayer(layer); });
+      if (map.hasLayer(state.normal)) map.removeLayer(state.normal);
+      if (state.fallback && map.hasLayer(state.fallback)) map.removeLayer(state.fallback);
       if (!map.hasLayer(state.imagery)) state.imagery.addTo(map);
       state.references.forEach(layer => { if (!map.hasLayer(layer)) layer.addTo(map); });
     } else {
       if (state.imagery && map.hasLayer(state.imagery)) map.removeLayer(state.imagery);
       state.references.forEach(layer => { if (map.hasLayer(layer)) map.removeLayer(layer); });
-      state.normal.forEach(layer => { if (!map.hasLayer(layer)) layer.addTo(map); });
+      if (state.fallbackActive) {
+        if (!state.fallback) state.fallback = createFallbackLayer();
+        if (!map.hasLayer(state.fallback)) state.fallback.addTo(map);
+      } else {
+        ensureNormalVisible(map, state);
+      }
     }
 
     updateControl(state);
@@ -73,13 +88,24 @@
 
     state = {
       mode: 'map',
-      normal: createNormalLayers(),
+      normal: createNormalLayer(),
+      fallback: null,
+      fallbackActive: false,
       imagery: null,
       references: [],
-      controlNode: null
+      controlNode: null,
+      tileErrors: 0
     };
     states.set(map, state);
-    state.normal.forEach(layer => layer.addTo(map));
+
+    state.normal.on('tileerror', function () {
+      state.tileErrors += 1;
+      if (state.tileErrors >= 4) activateFallback(map, state);
+    });
+    state.normal.on('tileload', function () {
+      state.tileErrors = 0;
+    });
+    state.normal.addTo(map);
 
     const control = L.control({position: 'topright'});
     control.onAdd = function () {
