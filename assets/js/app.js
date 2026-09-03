@@ -259,6 +259,19 @@
         onEachFeature: (feature, layer) => {
           const props = feature.properties || {};
           if (props.name) layer.bindTooltip(esc(props.name));
+          const targetId = props.building_id || props.parking_id || props.id || 'map overlay';
+          const targetLabel = props.name || (props.building_id ? 'Building outline' : props.parking_id ? 'Parking outline' : 'Map overlay');
+          layer.on('add', () => {
+            const element = layer.getElement?.();
+            if (!element) return;
+            element.setAttribute('role', 'button');
+            element.setAttribute('tabindex', '0');
+            element.setAttribute('aria-label', targetLabel);
+            element.style.cursor = 'pointer';
+            element.addEventListener('keydown', event => {
+              if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); element.dispatchEvent(new MouseEvent('click', {bubbles:true})); }
+            });
+          });
           if (props.building_id && callbacks.onBuilding) {
             layer.on('click', event => callbacks.onBuilding(props.building_id, event.originalEvent || event));
           } else if (props.parking_id && callbacks.onParking) {
