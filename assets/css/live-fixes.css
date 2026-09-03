@@ -1,0 +1,15 @@
+/* Screenshot-driven public map fixes. Keep this small and removable as the main experience CSS is consolidated. */
+body[data-page="map"] .site-header .brand img{
+  filter:none!important;
+  background:#fff;
+  border-radius:4px;
+  padding:3px 6px;
+  height:44px;
+  width:210px;
+  max-width:31vw;
+  object-fit:contain;
+}
+body[data-page="map"] .leaflet-tile-pane{filter:saturate(1.06) contrast(1.02)!important}
+@media (max-width:760px){
+  body[data-page="map"] .site-header .brand img{height:36px;width:158px;max-width:44vw;padding:2px 4px}
+}
