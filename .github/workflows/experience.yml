@@ -58,7 +58,7 @@ jobs:
 
       - name: Verify designed map and screenshot fixes
         run: |
-          grep -Fq 'World_Street_Map' assets/js/basemap.js
+          grep -Fq 'World_Topo_Map' assets/js/basemap.js
           grep -Fq 'tile.openstreetmap.org' assets/js/basemap.js
           grep -Fq 'tileerror' assets/js/basemap.js
           grep -Fq 'Satellite</button>' assets/js/basemap.js
@@ -78,7 +78,7 @@ jobs:
           grep -Fq 'basemap' assets/js/experience.js
           grep -Fq 'prefers-reduced-motion' assets/css/experience.css
           grep -Fq '@media print' assets/css/experience.css
-          echo 'Visible color Map/Satellite, neutral parking surfaces, dimensional buildings, URL state, reduced motion and print rules are present.'
+          echo 'Topographic Map/Satellite, neutral parking surfaces, dimensional buildings, URL state, reduced motion and print rules are present.'
 
       - name: Verify complete and editable building geometry flow
         run: |
