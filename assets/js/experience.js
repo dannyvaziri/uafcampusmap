@@ -263,10 +263,22 @@
           pane:'uaf-building-roof',
           style:{color:'#5b7180',weight:1.6,opacity:1,fillColor:roofFill,fillOpacity:.94},
           onEachFeature:(f, layer) => {
+            const label = row.common_name || row.official_name || feature.properties?.name || 'Campus building';
             layer.on('mouseover', () => layer.setStyle({color:'#236192',weight:3,fillOpacity:1}));
             layer.on('mouseout', () => styleSelection());
             layer.on('click', () => openLocation(buildingId,'building'));
-            layer.bindTooltip(esc(row.common_name || row.official_name || feature.properties?.name || 'Campus building'), {sticky:true,className:'uaf-map-hover'});
+            layer.on('add', () => {
+              const element = layer.getElement?.();
+              if (!element) return;
+              element.setAttribute('role','button');
+              element.setAttribute('tabindex','0');
+              element.setAttribute('aria-label',label + ' outline');
+              element.style.cursor='pointer';
+              element.addEventListener('keydown', event => {
+                if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); element.dispatchEvent(new MouseEvent('click',{bubbles:true})); }
+              });
+            });
+            layer.bindTooltip(esc(label), {sticky:true,className:'uaf-map-hover'});
             visual.roofLayers.set(buildingId, layer);
           }
         }).addTo(visual.roofs);
