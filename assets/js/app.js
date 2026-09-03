@@ -554,7 +554,8 @@
     layers: new Map(),
     marker: null,
     drawing: false,
-    editing: false
+    editing: false,
+    cart: []
   };
 
   function adminBuildings() {return getBuildings(admin.config, true);}
@@ -563,19 +564,41 @@
   function adminParkingItem() {return adminParking().find(item => item.id === admin.parkingId || item.code === admin.parkingId);}
   function adminShape() {return (admin.config.shapes || []).find(feature => feature.properties?.id === admin.shapeId);}
 
+  function recordAdminChange(area, id, patch) {
+    const key = area + ':' + id;
+    const existing = admin.cart.find(item => item.key === key);
+    if (existing) existing.patch = {...existing.patch, ...patch};
+    else admin.cart.push({key, area, id, patch:{...patch}, time:Date.now()});
+    renderAdminCart();
+  }
+
+  function renderAdminCart() {
+    const holder = document.getElementById('admin-cart');
+    const count = document.getElementById('admin-cart-count');
+    if (count) count.textContent = String(admin.cart.length);
+    if (!holder) return;
+    holder.innerHTML = admin.cart.length
+      ? '<strong>' + admin.cart.length + ' pending change' + (admin.cart.length === 1 ? '' : 's') + '</strong><ul>' + admin.cart.slice(-12).map(item => '<li>' + esc(item.area) + ' — ' + esc(item.id) + '</li>').join('') + '</ul><button type="button" id="cart-clear">Clear change cart</button>'
+      : '<strong>No pending changes</strong><p>Changes you make in the editor will appear here until you save or publish them together.</p>';
+    holder.querySelector('#cart-clear')?.addEventListener('click', () => {admin.cart=[]; renderAdminCart(); adminStatus('Change cart cleared. Editor values were not changed.','');});
+  }
+
   function updateBuilding(id, patch) {
+    recordAdminChange('Building', id, patch);
     const index = admin.config.customBuildings.findIndex(item => item.id === id);
     if (index >= 0) admin.config.customBuildings[index] = {...admin.config.customBuildings[index], ...patch};
     else admin.config.buildingOverrides[id] = {...(admin.config.buildingOverrides[id] || {}), ...patch};
   }
 
   function updateParking(id, patch) {
+    recordAdminChange('Parking', id, patch);
     const index = admin.config.customParking.findIndex(item => item.id === id);
     if (index >= 0) admin.config.customParking[index] = {...admin.config.customParking[index], ...patch};
     else admin.config.parkingOverrides[id] = {...(admin.config.parkingOverrides[id] || {}), ...patch};
   }
 
   function updateShape(id, patch) {
+    recordAdminChange('Shape', id, patch);
     admin.config.shapes = (admin.config.shapes || []).map(feature => feature.properties?.id === id ? {...feature, properties:{...(feature.properties || {}), ...patch}} : feature);
   }
 
@@ -618,8 +641,9 @@
   function renderAdmin() {
     admin.buildingId = admin.buildingId || adminBuildings()[0]?.id || '';
     admin.parkingId = admin.parkingId || adminParking()[0]?.id || adminParking()[0]?.code || '';
-    app.innerHTML = '<main id="main" class="page admin-page"><div class="admin-title"><div><p class="eyebrow">UAF CAMPUS MAP ADMIN</p><h1>Map editor</h1><p>Choose it. Change it. Publish it.</p></div><div class="admin-top-actions"><a href="/" target="_blank" rel="noopener">Open public map</a><a href="/admin/images">PNG overlays</a></div></div>' + wizardMarkup() + '<div id="admin-status" class="admin-status" role="status" aria-live="polite">Choose what you want to edit.</div><section id="admin-panel" class="wizard-panel"></section></main>';
+    app.innerHTML = '<main id="main" class="page admin-page"><div class="admin-title"><div><p class="eyebrow">UAF CAMPUS MAP ADMIN</p><h1>Map editor</h1><p>Make multiple changes, review them in the change cart, then save or deploy them together.</p></div><div class="admin-top-actions"><a href="/" target="_blank" rel="noopener">Open public map</a><a href="/admin/overlays">Overlay editor</a><a href="/admin/images">PNG overlays</a></div></div>' + wizardMarkup() + '<div id="admin-status" class="admin-status" role="status" aria-live="polite">Choose what you want to edit.</div><aside class="admin-change-cart" aria-label="Pending change cart"><div class="cart-heading"><h2>Change cart <span id="admin-cart-count">0</span></h2><p>Changes stay in this browser until you save a draft or deploy the complete configuration.</p></div><div id="admin-cart"></div></aside><section id="admin-panel" class="wizard-panel"></section></main>';
     document.querySelectorAll('[data-wizard-step]').forEach(button => button.addEventListener('click', () => {if (button.disabled) return; admin.step = Number(button.dataset.wizardStep); renderAdminStep();}));
+    renderAdminCart();
     renderAdminStep();
   }
 
@@ -919,7 +943,7 @@
     const report=validateConfig(admin.config);const token=sessionStorage.getItem('uaf-github-token')||'';
     panel.innerHTML='<div class="wizard-heading"><p class="eyebrow">STEP 3</p><h2>Review and publish</h2><p>Publishing updates <code>'+esc(CONFIG_PATH)+'</code> on GitHub <code>main</code>. Hostinger can then deploy the same PHP site.</p></div><div class="validation-box '+(report.errors.length?'has-errors':'ok')+'"><h3>Validation</h3>'+(report.errors.length?'<strong>'+report.errors.length+' error(s) must be fixed before publishing.</strong><ul>'+report.errors.map(item=>'<li>'+esc(item)+'</li>').join('')+'</ul>':'<strong>No blocking validation errors.</strong>')+(report.warnings.length?'<h4>Warnings</h4><ul>'+report.warnings.map(item=>'<li>'+esc(item)+'</li>').join('')+'</ul>':'')+'</div><div class="publish-summary"><span>'+adminBuildings().length+' buildings</span><span>'+adminParking().length+' parking records</span><span>'+(admin.config.shapes||[]).length+' map shapes</span><span>'+(admin.config.imageOverlays||[]).length+' PNG overlays</span></div><section class="github-connect"><h3>GitHub connection</h3><p>Use a fine-grained token limited to this repository with <strong>Contents: Read and write</strong>. The token stays only in this browser session.</p><label class="admin-field"><span>GitHub token</span><input id="github-token" type="password" autocomplete="off" value="'+esc(token)+'" placeholder="github_pat_…"></label><div class="geometry-actions"><button type="button" id="test-github">Test connection</button><button type="button" id="save-publish-draft">Save draft</button><button type="button" id="publish-live" class="primary-admin" '+(report.errors.length?'disabled':'')+'>Publish to GitHub & live map</button></div><p id="publish-status" class="inline-status" role="status" aria-live="polite"></p></section><div class="wizard-footer"><button type="button" id="back-edit">← Back to edit</button><a href="/" target="_blank" rel="noopener">Open public map</a></div>';
     const tokenInput=document.getElementById('github-token');tokenInput.addEventListener('input',()=>{if(tokenInput.value.trim())sessionStorage.setItem('uaf-github-token',tokenInput.value.trim());else sessionStorage.removeItem('uaf-github-token');});
-    document.getElementById('save-publish-draft').addEventListener('click',saveAdminDraft);document.getElementById('back-edit').addEventListener('click',()=>{admin.step=2;renderAdminStep();});
+    renderAdminCart(); document.getElementById('save-publish-draft').addEventListener('click',saveAdminDraft);document.getElementById('back-edit').addEventListener('click',()=>{admin.step=2;renderAdminStep();});
     document.getElementById('test-github').addEventListener('click',async()=>{const status=document.getElementById('publish-status'),tokenValue=tokenInput.value.trim();if(!tokenValue){status.textContent='Enter your GitHub token first.';return;}status.textContent='Testing GitHub connection…';try{await testGitHubToken(tokenValue);status.textContent='GitHub connection succeeded.';}catch(error){status.textContent=error.message;}});
     document.getElementById('publish-live').addEventListener('click',async()=>{const status=document.getElementById('publish-status'),tokenValue=tokenInput.value.trim();if(!tokenValue){status.textContent='Enter your GitHub token first.';return;}const button=document.getElementById('publish-live');button.disabled=true;status.textContent='Publishing to GitHub…';try{const sha=await publishConfig(admin.config,tokenValue,'Update UAF campus map from admin');activeConfig=normalizeConfig(admin.config);localStorage.removeItem('uaf-map-config-draft');status.textContent='Published to GitHub'+(sha?' ('+sha.slice(0,7)+')':'')+'. Hostinger deployment should now start from main. Public map tabs in this browser will refresh to the new configuration.';}catch(error){status.textContent=error.message;}finally{button.disabled=report.errors.length>0;}});
   }
