@@ -385,7 +385,8 @@
         } catch (error) {}
       });
       activeDialog = dialog;
-      dialog.show();
+      try { dialog.show(); } catch (error) { dialog.setAttribute('open',''); }
+      if (!dialog.open) dialog.setAttribute('open','');
       setTimeout(() => dialog.querySelector('h2')?.focus(), 0);
     }
 
@@ -417,7 +418,8 @@
         } catch (error) {}
       });
       activeDialog = dialog;
-      dialog.show();
+      try { dialog.show(); } catch (error) { dialog.setAttribute('open',''); }
+      if (!dialog.open) dialog.setAttribute('open','');
       setTimeout(() => dialog.querySelector('h2')?.focus(), 0);
     }
 
