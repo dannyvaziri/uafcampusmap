@@ -515,7 +515,7 @@
       "properties": {
         "id": "shape-1788389606097",
         "name": "4B — Patty Center/SRC",
-        "visible": true,
+        "visible": false,
         "legend_key": "parking_permit",
         "kind": "parking-area",
         "parking_id": "parking-4b-43",
@@ -523,7 +523,9 @@
         "fill": "#FFCD00",
         "weight": 2,
         "opacity": 1,
-        "fillOpacity": 0.68
+        "fillOpacity": 0.68,
+        "review_status": "needs-review",
+        "source": "Coarse placeholder — authoritative Parking Services GIS required"
       },
       "geometry": {
         "type": "Polygon",
