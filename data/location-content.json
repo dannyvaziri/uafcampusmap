@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "locations": {
+    "signers": {
+      "short_name": "Signers' Hall",
+      "aliases": ["Signers Hall", "Admissions", "Registrar", "Bursar", "Student Affairs", "Enrollment Management", "Polar Express"],
+      "departments": ["Office of Admissions", "Office of the Registrar", "Office of the Bursar", "Student Affairs and Enrollment Management"],
+      "services": ["Admissions", "Registration and records", "Student accounts", "Student services"],
+      "description": "Major student-services destination with Admissions and other enrollment-related offices.",
+      "label_priority": 10,
+      "layers": ["student-services", "visitor-destinations"],
+      "website": "https://www.uaf.edu/admissions/"
+    },
+    "eielson": {
+      "aliases": ["Financial Aid", "Financial Aid Office", "Finaid"],
+      "departments": ["Financial Aid Office"],
+      "services": ["Financial aid"],
+      "label_priority": 9,
+      "layers": ["student-services"]
+    },
+    "wood": {
+      "aliases": ["Student Union", "Wood Center student union", "Campus Cache", "Arctic Java", "Esports"],
+      "departments": ["Wood Center for Student Engagement"],
+      "services": ["Student union", "Dining", "Coffee", "Student activities", "Esports"],
+      "description": "UAF's student union and a central destination for dining, activities and student services.",
+      "label_priority": 10,
+      "layers": ["student-services", "dining", "visitor-destinations"]
+    },
+    "library": {
+      "aliases": ["Rasmuson", "Rasmuson Library", "Student Success Center"],
+      "services": ["Library", "Study space", "Student Success Center"],
+      "label_priority": 10,
+      "layers": ["academic", "student-services", "visitor-destinations"]
+    },
+    "museum": {
+      "aliases": ["Museum", "Museum of the North", "UA Museum of the North"],
+      "services": ["Museum", "Visitor destination"],
+      "label_priority": 10,
+      "layers": ["visitor-destinations", "event-spaces"]
+    },
+    "bunnell": {
+      "aliases": ["Bunnell", "The Nook", "Nook"],
+      "services": ["Academic building", "The Nook"],
+      "label_priority": 9,
+      "layers": ["academic", "student-services"]
+    },
+    "gruening": {
+      "aliases": ["Gruening"],
+      "services": ["Academic building"],
+      "label_priority": 9,
+      "layers": ["academic"]
+    },
+    "patty": {
+      "aliases": ["Patty", "Patty Center", "Patty Ice Arena", "Patty Pool"],
+      "services": ["Athletics", "Recreation"],
+      "label_priority": 10,
+      "layers": ["athletics-recreation", "event-spaces"]
+    },
+    "src": {
+      "aliases": ["SRC", "Student Recreation Center", "Nanook Recreation"],
+      "services": ["Recreation", "Fitness"],
+      "label_priority": 10,
+      "layers": ["athletics-recreation", "student-services"]
+    },
+    "fine-arts": {
+      "aliases": ["Fine Arts", "Regents Great Hall", "Salisbury Theatre"],
+      "services": ["Arts", "Performance", "Event space"],
+      "label_priority": 9,
+      "layers": ["academic", "event-spaces"]
+    },
+    "lola-tilly": {
+      "aliases": ["Lola Tilly", "Tilly Commons"],
+      "services": ["Dining", "Commons"],
+      "label_priority": 8,
+      "layers": ["dining", "event-spaces"]
+    }
+  }
+}

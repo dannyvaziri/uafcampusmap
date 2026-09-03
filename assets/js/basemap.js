@@ -8,14 +8,30 @@
   const states = new WeakMap();
   const imageryPattern = /ibasemaps-api\.arcgis\.com\/arcgis\/rest\/services\/World_Imagery\/MapServer\/tile/i;
   const referencePattern = /services\.arcgisonline\.com\/ArcGIS\/rest\/services\/Reference\/(World_Transportation|World_Boundaries_and_Places)\/MapServer\/tile/i;
-  const normalUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  const normalBaseUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+  const normalRoadUrl = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}';
+  const normalPlaceUrl = 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}';
 
-  function createNormalLayer() {
-    return originalTileLayer(normalUrl, {
-      maxZoom: 20,
-      crossOrigin: true,
-      attribution: '© OpenStreetMap contributors'
-    });
+  function createNormalLayers() {
+    return [
+      originalTileLayer(normalBaseUrl, {
+        maxZoom: 19,
+        crossOrigin: true,
+        attribution: 'Basemap © Esri, HERE, Garmin, FAO, NOAA, USGS'
+      }),
+      originalTileLayer(normalRoadUrl, {
+        maxZoom: 20,
+        crossOrigin: true,
+        opacity: 0.62,
+        attribution: 'Transportation reference © Esri'
+      }),
+      originalTileLayer(normalPlaceUrl, {
+        maxZoom: 20,
+        crossOrigin: true,
+        opacity: 0.48,
+        attribution: 'Reference labels © Esri'
+      })
+    ];
   }
 
   function updateControl(state) {
@@ -27,26 +43,28 @@
     });
   }
 
+  function emit(map, mode) {
+    window.dispatchEvent(new CustomEvent('uaf:basemapchange', {detail:{map,mode}}));
+  }
+
   function setMode(map, mode) {
     const state = states.get(map);
     if (!state) return;
+    const previous = state.mode;
     state.mode = mode === 'satellite' && state.imagery ? 'satellite' : 'map';
 
     if (state.mode === 'satellite') {
-      if (map.hasLayer(state.normal)) map.removeLayer(state.normal);
+      state.normal.forEach(layer => { if (map.hasLayer(layer)) map.removeLayer(layer); });
       if (!map.hasLayer(state.imagery)) state.imagery.addTo(map);
-      state.references.forEach(layer => {
-        if (!map.hasLayer(layer)) layer.addTo(map);
-      });
+      state.references.forEach(layer => { if (!map.hasLayer(layer)) layer.addTo(map); });
     } else {
       if (state.imagery && map.hasLayer(state.imagery)) map.removeLayer(state.imagery);
-      state.references.forEach(layer => {
-        if (map.hasLayer(layer)) map.removeLayer(layer);
-      });
-      if (!map.hasLayer(state.normal)) state.normal.addTo(map);
+      state.references.forEach(layer => { if (map.hasLayer(layer)) map.removeLayer(layer); });
+      state.normal.forEach(layer => { if (!map.hasLayer(layer)) layer.addTo(map); });
     }
 
     updateControl(state);
+    if (previous !== state.mode) emit(map, state.mode);
   }
 
   function ensureState(map) {
@@ -55,13 +73,13 @@
 
     state = {
       mode: 'map',
-      normal: createNormalLayer(),
+      normal: createNormalLayers(),
       imagery: null,
       references: [],
       controlNode: null
     };
     states.set(map, state);
-    state.normal.addTo(map);
+    state.normal.forEach(layer => layer.addTo(map));
 
     const control = L.control({position: 'topright'});
     control.onAdd = function () {

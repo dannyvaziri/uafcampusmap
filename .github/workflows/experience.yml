@@ -1,0 +1,68 @@
+name: Public map experience checks
+
+on:
+  push:
+    branches: [main, widener-redesign-20260902]
+  pull_request:
+    branches: [main]
+
+jobs:
+  experience:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate PHP and JSON
+        run: |
+          php -l index.php
+          php -l includes/header.php
+          php -l includes/footer.php
+          php -l includes/bootstrap.php
+          php -r '$files = glob("data/*.json"); foreach ($files as $file) { json_decode(file_get_contents($file), true, 512, JSON_THROW_ON_ERROR); echo "valid $file\n"; }'
+
+      - name: Validate vanilla JavaScript
+        run: |
+          node --check assets/js/experience.js
+          node --check assets/js/basemap.js
+          node --check assets/js/app.js
+          echo 'Public runtime JavaScript parses without a build step.'
+
+      - name: Verify map-first page shell
+        run: |
+          REQUEST_URI=/ php index.php > /tmp/map.html
+          grep -Fq 'data-page="map"' /tmp/map.html
+          grep -Fq 'assets/css/experience.css' /tmp/map.html
+          grep -Fq 'assets/js/experience.js' /tmp/map.html
+          grep -Fq 'data-map-command="locations"' /tmp/map.html
+          grep -Fq 'data-map-command="layers"' /tmp/map.html
+          grep -Fq 'data-map-command="layer:Parking"' /tmp/map.html
+          grep -Fq 'Printable Map' /tmp/map.html
+          grep -Fq 'Office of Admissions' /tmp/map.html
+          grep -Fq 'Financial Aid Office' /tmp/map.html
+          echo 'Map-first UAF application shell and searchable location enrichment are present.'
+
+      - name: Verify designed map and state features
+        run: |
+          grep -Fq 'World_Light_Gray_Base' assets/js/basemap.js
+          grep -Fq 'World_Transportation' assets/js/basemap.js
+          grep -Fq 'Satellite</button>' assets/js/basemap.js
+          grep -Fq "mode: 'map'" assets/js/basemap.js
+          ! grep -Fq 'tile.openstreetmap.org' assets/js/basemap.js
+          grep -Fq 'uaf-building-shadow' assets/js/experience.js
+          grep -Fq 'uaf-building-roof' assets/js/experience.js
+          grep -Fq 'uaf-layer-highlight' assets/js/experience.js
+          grep -Fq 'uaf-browser-drawer' assets/js/experience.js
+          grep -Fq 'location' assets/js/experience.js
+          grep -Fq 'layers' assets/js/experience.js
+          grep -Fq 'basemap' assets/js/experience.js
+          grep -Fq 'prefers-reduced-motion' assets/css/experience.css
+          grep -Fq '@media print' assets/css/experience.css
+          echo 'Designed Map/Satellite, dimensional buildings, layers, URL state, reduced motion and print rules are present.'
+
+      - name: Verify data-driven modes and search
+        run: |
+          php -r '$x=json_decode(file_get_contents("data/location-content.json"),true,512,JSON_THROW_ON_ERROR); if (!in_array("Admissions", $x["locations"]["signers"]["aliases"], true)) throw new RuntimeException("Admissions alias missing"); if (!in_array("Financial Aid", $x["locations"]["eielson"]["aliases"], true)) throw new RuntimeException("Financial Aid alias missing");'
+          php -r '$x=json_decode(file_get_contents("data/modes.json"),true,512,JSON_THROW_ON_ERROR); foreach (["standard","visitor","parking","accessibility","construction","winter"] as $id) if (!isset($x["modes"][$id])) throw new RuntimeException("Mode missing: $id");'
+          ! grep -qE 'react-dom|createRoot|/@vite|npm run|npm install' index.php includes/*.php assets/js/experience.js
+          echo 'Search enrichment and reusable modes are data-driven with no React/Vite/npm runtime.'
