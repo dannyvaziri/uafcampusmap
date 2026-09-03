@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "modes": {
+    "standard": {
+      "label": "Standard",
+      "layers": [],
+      "description": "General campus map."
+    },
+    "visitor": {
+      "label": "Visitor",
+      "layers": ["building_visitor", "parking_visitor_only", "parking_visitor_metered", "parking_short_term"],
+      "description": "Visitor destinations and visitor-friendly parking."
+    },
+    "parking": {
+      "label": "Parking",
+      "layers": ["parking_visitor_only", "parking_visitor_metered", "parking_short_term", "parking_permit", "parking_gold", "parking_restricted", "parking_kiosk", "accessible_parking"],
+      "description": "Parking categories and parking services."
+    },
+    "accessibility": {
+      "label": "Accessibility",
+      "layers": ["accessible_parking", "accessible_entrance", "elevator", "stairs"],
+      "description": "Verified accessibility features as they become available."
+    },
+    "construction": {
+      "label": "Construction",
+      "layers": ["construction"],
+      "description": "Current mapped construction and temporary closures."
+    },
+    "winter": {
+      "label": "Winter",
+      "layers": ["trail"],
+      "description": "Winter information can be added here as verified seasonal data becomes available."
+    }
+  }
+}
