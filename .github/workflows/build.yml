@@ -22,6 +22,7 @@ jobs:
           php -l admin/images.php
           php -l admin/overlays.php
           php -l admin/publish.php
+          php -l admin/footprints.php
           for file in includes/*.php; do php -l "$file"; done
 
       - name: Validate JSON data
@@ -59,6 +60,10 @@ jobs:
           node --check assets/js/app.js
           node --check assets/js/basemap.js
           node --check assets/js/legend.js
+          node --check assets/js/experience.js
+          node --check assets/js/surface-fix.js
+          node --check assets/js/building-reference.js
+          node --check assets/js/geometry-import.js
           node --check assets/js/overlay-manager.js
           node --check assets/js/publish-proxy.js
           echo 'Vanilla browser JavaScript parses successfully; no install or build was run.'
@@ -77,19 +82,31 @@ jobs:
           grep -Fq 'data-page="images"' /tmp/images.html
           grep -Fq 'data-page="overlays"' /tmp/overlays.html
           grep -Fq 'data-page="print"' /tmp/print.html
-          grep -Fq 'basemap.js' /tmp/map.html
-          grep -Fq 'basemap.js' /tmp/admin.html
-          grep -Fq 'basemap.js' /tmp/overlays.html
-          grep -Fq 'basemap.js' /tmp/print.html
+          grep -Fq 'building-reference.js' /tmp/map.html
+          grep -Fq 'geometry-import.js' /tmp/overlays.html
+          grep -Fq 'overlay-manager.js' /tmp/overlays.html
+          grep -Fq 'overlay-import.css' /tmp/overlays.html
           grep -Fq 'publish-proxy.js' /tmp/admin.html
           grep -Fq 'publish-proxy.js' /tmp/images.html
           grep -Fq 'publish-proxy.js' /tmp/overlays.html
           grep -Fq 'leaflet.draw.js' /tmp/admin.html
           grep -Fq 'leaflet.draw.js' /tmp/overlays.html
-          grep -Fq 'overlay-manager.js' /tmp/overlays.html
           grep -Fq 'uaf-legend' /tmp/map.html
           grep -Fq 'jspdf' /tmp/print.html
           echo 'All PHP page shells rendered with the expected page mode and page-specific assets.'
+
+      - name: Verify nonblocking editable footprint flow
+        run: |
+          grep -Fq '/admin/footprints.php' assets/js/geometry-import.js
+          grep -Fq 'AbortController' assets/js/geometry-import.js
+          grep -Fq 'bulkImportBuildingMatches' assets/js/geometry-import.js
+          grep -Fq 'bulkImportBuildingMatches' assets/js/overlay-manager.js
+          grep -Fq 'Needs review' assets/js/overlay-manager.js
+          grep -Fq "f:'json'" assets/js/building-reference.js
+          ! grep -Fq "f:'geojson'" assets/js/building-reference.js
+          grep -Fq "'f' => 'json'" admin/footprints.php
+          grep -Fq 'CURLOPT_TIMEOUT' admin/footprints.php
+          echo 'Building import is bounded, bulk-applied, editable, and uses the source supported JSON format.'
 
       - name: Check secure publishing path
         run: |
@@ -100,8 +117,8 @@ jobs:
           grep -Fq "?ref=" admin/publish.php
           grep -Fq "current['sha']" admin/publish.php
           grep -Fq "/admin/publish.php" assets/js/publish-proxy.js
-          ! grep -qE 'github_pat_|ghp_' admin/publish.php assets/js/publish-proxy.js includes/footer.php
-          echo 'Server-side publishing is protected, fetches the current SHA, and contains no embedded GitHub token.'
+          ! grep -qE 'github_pat_|ghp_|api.github.com/repos/.*/contents' assets/js/overlay-manager.js assets/js/geometry-import.js assets/js/publish-proxy.js
+          echo 'Server-side publishing is protected, fetches the current SHA, and contains no embedded browser-side GitHub credential.'
 
       - name: Check OMNI runtime structure
         run: |
@@ -114,32 +131,26 @@ jobs:
           test -f admin/images.php
           test -f admin/overlays.php
           test -f admin/publish.php
+          test -f admin/footprints.php
           test -f includes/bootstrap.php
           test -f includes/header.php
           test -f includes/footer.php
           test -f assets/css/omni.css
           test -f assets/css/overlays.css
+          test -f assets/css/overlay-import.css
           test -f assets/css/basemap.css
           test -f assets/js/app.js
           test -f assets/js/basemap.js
           test -f assets/js/legend.js
+          test -f assets/js/building-reference.js
+          test -f assets/js/geometry-import.js
           test -f assets/js/overlay-manager.js
           test -f assets/js/publish-proxy.js
           test -f assets/images/uaf-logo.svg
           test -f data/map-config.json
           test -f data/legend.json
-          grep -Fq 'assets/css/omni.css' index.php
-          grep -Fq 'assets/css/overlays.css' index.php
-          grep -Fq 'assets/css/basemap.css' index.php
-          grep -Fq 'assets/js/app.js' includes/footer.php
-          grep -Fq 'assets/js/basemap.js' includes/footer.php
-          grep -Fq 'assets/js/legend.js' includes/footer.php
-          grep -Fq 'assets/js/overlay-manager.js' includes/footer.php
-          grep -Fq 'assets/js/publish-proxy.js' includes/footer.php
-          grep -Fq 'leaflet.draw.js' includes/footer.php
           grep -Fq 'Save PDF' assets/js/app.js
           grep -Fq 'window.print()' assets/js/app.js
-          grep -Fq 'Publish to GitHub & live map' assets/js/app.js
           grep -Fq 'Map overlays & key' assets/js/overlay-manager.js
           grep -Fq 'parking_visitor_metered' data/legend.json
           grep -Fq 'Satellite</button>' assets/js/basemap.js
@@ -149,5 +160,5 @@ jobs:
 
       - name: Confirm runtime has no compiled-app entry point
         run: |
-          ! grep -qE 'src="/src/|react-dom|createRoot|/@vite' index.php includes/*.php
-          echo 'No React/Vite runtime entry point is referenced.'
+          ! grep -qE 'src="/src/|react-dom|createRoot|/@vite|npm run|npm install' index.php includes/*.php assets/js/*.js
+          echo 'No React/Vite/npm runtime entry point is referenced.'
