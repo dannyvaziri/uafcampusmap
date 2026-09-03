@@ -385,7 +385,7 @@
         } catch (error) {}
       });
       activeDialog = dialog;
-      dialog.showModal();
+      dialog.show();
       setTimeout(() => dialog.querySelector('h2')?.focus(), 0);
     }
 
@@ -417,7 +417,7 @@
         } catch (error) {}
       });
       activeDialog = dialog;
-      dialog.showModal();
+      dialog.show();
       setTimeout(() => dialog.querySelector('h2')?.focus(), 0);
     }
 
