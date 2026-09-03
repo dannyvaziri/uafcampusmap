@@ -26,12 +26,14 @@ jobs:
           node --check assets/js/experience.js
           node --check assets/js/basemap.js
           node --check assets/js/surface-fix.js
+          node --check assets/js/geometry-import.js
           node --check assets/js/app.js
-          echo 'Public runtime JavaScript parses without a build step.'
+          echo 'Public/admin runtime JavaScript parses without a build step.'
 
       - name: Verify map-first page shell
         run: |
           REQUEST_URI=/ php index.php > /tmp/map.html
+          REQUEST_URI=/admin/overlays php admin/overlays.php > /tmp/overlays.html
           grep -Fq 'data-page="map"' /tmp/map.html
           grep -Fq 'assets/css/experience.css' /tmp/map.html
           grep -Fq 'assets/css/map-color.css' /tmp/map.html
@@ -39,13 +41,14 @@ jobs:
           grep -Fq 'assets/css/map-polish.css' /tmp/map.html
           grep -Fq 'assets/js/experience.js' /tmp/map.html
           grep -Fq 'assets/js/surface-fix.js' /tmp/map.html
+          grep -Fq 'assets/js/geometry-import.js' /tmp/overlays.html
           grep -Fq 'data-map-command="locations"' /tmp/map.html
           grep -Fq 'data-map-command="layers"' /tmp/map.html
           grep -Fq 'data-map-command="layer:Parking"' /tmp/map.html
           grep -Fq 'Printable Map' /tmp/map.html
           grep -Fq 'Office of Admissions' /tmp/map.html
           grep -Fq 'Financial Aid Office' /tmp/map.html
-          echo 'Map-first UAF application shell and searchable location enrichment are present.'
+          echo 'Map-first UAF shell, overlay importer and searchable location enrichment are present.'
 
       - name: Verify designed map and screenshot fixes
         run: |
@@ -71,9 +74,18 @@ jobs:
           grep -Fq '@media print' assets/css/experience.css
           echo 'Visible color Map/Satellite, logo repair, neutral public parking surfaces, dimensional buildings, URL state, reduced motion and print rules are present.'
 
+      - name: Verify editable building auto-generation
+        run: |
+          grep -Fq 'Building_Outlines_2023_Pictometry' assets/js/geometry-import.js
+          grep -Fq 'FeatureServer/22/query' assets/js/geometry-import.js
+          grep -Fq 'Auto-generate missing building outlines' assets/js/geometry-import.js
+          grep -Fq 'L.Draw.Event.CREATED' assets/js/geometry-import.js
+          grep -Fq '38' assets/js/geometry-import.js
+          echo 'FNSB building footprints can be matched to UAF records and inserted through the existing editable Leaflet Draw workflow.'
+
       - name: Verify data-driven modes and search
         run: |
           php -r '$x=json_decode(file_get_contents("data/location-content.json"),true,512,JSON_THROW_ON_ERROR); if (!in_array("Admissions", $x["locations"]["signers"]["aliases"], true)) throw new RuntimeException("Admissions alias missing"); if (!in_array("Financial Aid", $x["locations"]["eielson"]["aliases"], true)) throw new RuntimeException("Financial Aid alias missing");'
           php -r '$x=json_decode(file_get_contents("data/modes.json"),true,512,JSON_THROW_ON_ERROR); foreach (["standard","visitor","parking","accessibility","construction","winter"] as $id) if (!isset($x["modes"][$id])) throw new RuntimeException("Mode missing: $id");'
-          ! grep -qE 'react-dom|createRoot|/@vite|npm run|npm install' index.php includes/*.php assets/js/experience.js
-          echo 'Search enrichment and reusable modes are data-driven with no React/Vite/npm runtime.'
+          ! grep -qE 'react-dom|createRoot|/@vite|npm run|npm install' index.php includes/*.php assets/js/experience.js assets/js/geometry-import.js
+          echo 'Search enrichment, footprint import and reusable modes are data-driven with no React/Vite/npm runtime.'
