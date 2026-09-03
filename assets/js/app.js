@@ -326,15 +326,27 @@
     const buildings = getBuildings(cfg);
     const parking = getParking(cfg);
 
+    let activeDialog = null;
+    function closeActiveDialog(clearUrl = false) {
+      if (activeDialog) {
+        try { activeDialog.close(); } catch (error) {}
+        activeDialog.remove();
+        activeDialog = null;
+      }
+      document.querySelectorAll('dialog.details').forEach(dialog => { try { dialog.close(); } catch (error) {} dialog.remove(); });
+      if (clearUrl) updateUrlParam('place', '', ['parking']);
+    }
+
     function openBuilding(id, trigger) {
       const building = buildings.find(item => item.id === id);
       if (!building) return;
+      closeActiveDialog(false);
       selectedBuilding = id;
       buildingMarkers.forEach((marker, markerId) => marker.setIcon(markerIcon(buildings.find(item => item.id === markerId), markerId === selectedBuilding)));
       if (exact(building)) map.flyTo([Number(building.latitude), Number(building.longitude)], 18, {duration:0.35});
       updateUrlParam('place', building.id, ['parking']);
       const source = safeExternal(building.source_url);
-      const services = Array.isArray(building.services) && building.services.length ? '<section><h3>Services and destinations</h3><p>' + esc(building.services.join(' · ')) + '</p></section>' : '';
+      const services = '<section><h3>Services and destinations</h3><p>' + esc(Array.isArray(building.services) && building.services.length ? building.services.join(' · ') : 'Building information and services are being verified by UAF.') + '</p></section>';
       const recommended = (building.recommended_parking || []).map(code => parking.find(item => item.code === code || item.id === code)).filter(Boolean);
       const recHtml = recommended.length ? '<section><h3>Suggested visitor parking starting points</h3>' + recommended.map(item => '<p><strong>' + esc((item.code || 'P') + ' — ' + (item.name || 'Parking')) + '</strong><br>' + esc(item.restrictions || '') + '</p>').join('') + '</section>' : '';
       const address = building.address || 'University of Alaska Fairbanks, Fairbanks, AK';
@@ -342,15 +354,16 @@
       const apple = 'https://maps.apple.com/?daddr=' + encodeURIComponent(address);
       const dialog = document.createElement('dialog');
       dialog.className = 'details';
-      dialog.innerHTML = '<div class="dialog-head"><div><p class="eyebrow">CAMPUS DESTINATION</p><h2 tabindex="-1">' + esc(building.common_name || building.official_name || 'Building') + '</h2><p>' + esc(building.address || 'Address pending') + '</p></div><button type="button" class="dialog-close" data-close aria-label="Close place details">×</button></div>' +
+      dialog.innerHTML = '<div class="dialog-head"><div><p class="eyebrow">CAMPUS DESTINATION</p><h2 tabindex="-1">' + esc(building.common_name || building.official_name || 'Building') + '</h2><p>' + esc(building.address || 'Address pending') + '</p></div><div class="dialog-head-actions"><button type="button" class="dialog-minimize" data-minimize aria-label="Minimize place details">−</button><button type="button" class="dialog-close" data-close aria-label="Close place details">×</button></div></div>' +
         '<div class="dialog-body"><dl class="detail-grid"><div><dt>Category</dt><dd>' + esc(String(building.category || 'building').replaceAll('_',' ')) + '</dd></div><div><dt>Map location</dt><dd>' + (exact(building) ? 'Mapped' : 'Address only') + '</dd></div></dl>' + services + recHtml + '<section><h3>Accessibility</h3><p>Use current UAF accessibility resources and posted campus signage for verified accessible-route information.</p>' + externalLink(meta.accessibility?.facilities_url, 'UAF accessibility facilities') + '</section>' + (source ? '<section><h3>Source</h3><p><a href="' + esc(source) + '" target="_blank" rel="noopener noreferrer">Open UAF building profile</a></p></section>' : '') + '</div>' +
         '<div class="dialog-actions"><a class="primary-action" href="' + esc(google) + '" target="_blank" rel="noopener noreferrer">Google directions</a><a href="' + esc(apple) + '" target="_blank" rel="noopener noreferrer">Apple directions</a><a href="/print?mode=selected&place=' + encodeURIComponent(building.id) + '">Print this area</a><button type="button" data-share>Share</button></div>';
       document.body.append(dialog);
       const returnFocus = trigger instanceof HTMLElement ? trigger : document.activeElement;
       const close = () => dialog.open ? dialog.close() : null;
-      dialog.querySelector('[data-close]').addEventListener('click', close);
+      dialog.querySelector('[data-close]').addEventListener('click', () => { close(); activeDialog = null; updateUrlParam('place', '', ['parking']); });
+      dialog.querySelector('[data-minimize]').addEventListener('click', () => { dialog.classList.toggle('is-minimized'); const minimized = dialog.classList.contains('is-minimized'); dialog.querySelector('[data-minimize]').textContent = minimized ? '+' : '−'; dialog.querySelector('[data-minimize]').setAttribute('aria-label', minimized ? 'Restore place details' : 'Minimize place details'); });
       dialog.addEventListener('cancel', event => {event.preventDefault(); close();});
-      dialog.addEventListener('close', () => {dialog.remove(); if (returnFocus?.focus) returnFocus.focus();});
+      dialog.addEventListener('close', () => {if (activeDialog === dialog) activeDialog = null; dialog.remove(); if (returnFocus?.focus) returnFocus.focus();});
       dialog.querySelector('[data-share]').addEventListener('click', async () => {
         const url = new URL(location.href); url.searchParams.set('place', building.id); url.searchParams.delete('parking');
         try {
@@ -358,6 +371,7 @@
           else {await navigator.clipboard.writeText(url.href); setStatus('Share link copied.');}
         } catch (error) {}
       });
+      activeDialog = dialog;
       dialog.showModal();
       setTimeout(() => dialog.querySelector('h2')?.focus(), 0);
     }
@@ -365,21 +379,23 @@
     function openParking(id, trigger) {
       const item = parking.find(row => row.id === id || row.code === id);
       if (!item) return;
+      closeActiveDialog(false);
       if (exact(item)) map.flyTo([Number(item.latitude), Number(item.longitude)], 18, {duration:0.35});
       updateUrlParam('parking', item.id || item.code, ['place']);
       const destination = item.address || ('UAF ' + (item.name || item.code || 'parking') + ', Fairbanks, AK');
       const google = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(destination);
       const dialog = document.createElement('dialog');
       dialog.className = 'details';
-      dialog.innerHTML = '<div class="dialog-head"><div><p class="eyebrow">PARKING</p><h2 tabindex="-1">' + esc((item.code || 'P') + ' — ' + (item.name || 'Parking')) + '</h2><p>' + esc(item.restrictions || 'Follow posted parking signs and current UAF Parking Services guidance.') + '</p></div><button type="button" class="dialog-close" data-close aria-label="Close parking details">×</button></div>' +
+      dialog.innerHTML = '<div class="dialog-head"><div><p class="eyebrow">PARKING</p><h2 tabindex="-1">' + esc((item.code || 'P') + ' — ' + (item.name || 'Parking')) + '</h2><p>' + esc(item.restrictions || 'Follow posted parking signs and current UAF Parking Services guidance.') + '</p></div><div class="dialog-head-actions"><button type="button" class="dialog-minimize" data-minimize aria-label="Minimize parking details">−</button><button type="button" class="dialog-close" data-close aria-label="Close parking details">×</button></div></div>' +
         '<div class="dialog-body"><section><h3>Visitor guidance</h3><p>' + esc(meta.parking_policy?.visitor_note || 'Check current UAF parking guidance before parking.') + '</p></section><section><h3>Boundary status</h3><p>Use posted signs for enforcement boundaries unless a verified map polygon is shown.</p></section></div>' +
         '<div class="dialog-actions"><a class="primary-action" href="' + esc(google) + '" target="_blank" rel="noopener noreferrer">Google directions</a>' + externalLink(meta.parking_policy?.source_url, 'Parking Services') + '<button type="button" data-share>Share</button></div>';
       document.body.append(dialog);
       const returnFocus = trigger instanceof HTMLElement ? trigger : document.activeElement;
       const close = () => dialog.open ? dialog.close() : null;
-      dialog.querySelector('[data-close]').addEventListener('click', close);
+      dialog.querySelector('[data-close]').addEventListener('click', () => { close(); activeDialog = null; updateUrlParam('parking', '', ['place']); });
+      dialog.querySelector('[data-minimize]').addEventListener('click', () => { dialog.classList.toggle('is-minimized'); const minimized = dialog.classList.contains('is-minimized'); dialog.querySelector('[data-minimize]').textContent = minimized ? '+' : '−'; dialog.querySelector('[data-minimize]').setAttribute('aria-label', minimized ? 'Restore parking details' : 'Minimize parking details'); });
       dialog.addEventListener('cancel', event => {event.preventDefault(); close();});
-      dialog.addEventListener('close', () => {dialog.remove(); if (returnFocus?.focus) returnFocus.focus();});
+      dialog.addEventListener('close', () => {if (activeDialog === dialog) activeDialog = null; dialog.remove(); if (returnFocus?.focus) returnFocus.focus();});
       dialog.querySelector('[data-share]').addEventListener('click', async () => {
         const url = new URL(location.href); url.searchParams.set('parking', item.id || item.code); url.searchParams.delete('place');
         try {
@@ -387,6 +403,7 @@
           else {await navigator.clipboard.writeText(url.href); setStatus('Share link copied.');}
         } catch (error) {}
       });
+      activeDialog = dialog;
       dialog.showModal();
       setTimeout(() => dialog.querySelector('h2')?.focus(), 0);
     }
