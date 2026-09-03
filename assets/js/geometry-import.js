@@ -318,11 +318,11 @@
     manager = nextManager || window.UAFOverlayManager;
     if (!manager) return;
     promoteImporter();
-    renderPanel('Checking the building-footprint source in the background. Existing geometry will not be changed until matches are ready.');
-    if (!api.ranAutomatically) {
-      api.ranAutomatically = true;
-      setTimeout(() => run(true, false), 700);
-    }
+    renderPanel('Ready. Start the bounded importer when you want to check the current building-footprint source. Existing geometry will not be changed automatically.');
+    // Do not block the editor on a third-party GIS request. The administrator
+    // can start the bounded importer from the visible button after the page
+    // has loaded; this keeps the route usable when ArcGIS/FNSB is slow.
+    api.ranAutomatically = false;
   }
 
   window.addEventListener('uaf:overlaymanagerready', event => connect(event.detail?.manager));
