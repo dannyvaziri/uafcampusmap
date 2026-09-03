@@ -30,6 +30,7 @@ $experienceVersion = (string) max(
     (int) (@filemtime(__DIR__ . '/assets/css/map-polish.css') ?: 0),
     (int) (@filemtime(__DIR__ . '/assets/js/experience.js') ?: 0),
     (int) (@filemtime(__DIR__ . '/assets/js/surface-fix.js') ?: 0),
+    (int) (@filemtime(__DIR__ . '/assets/js/building-reference.js') ?: 0),
     (int) (@filemtime(__DIR__ . '/assets/js/basemap.js') ?: 0),
     (int) (@filemtime(__DIR__ . '/data/location-content.json') ?: 0),
     (int) (@filemtime(__DIR__ . '/data/modes.json') ?: 0)
