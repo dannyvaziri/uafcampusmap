@@ -25,7 +25,9 @@ unset($building);
 $experienceVersion = (string) max(
     (int) $assetVersion,
     (int) (@filemtime(__DIR__ . '/assets/css/experience.css') ?: 0),
+    (int) (@filemtime(__DIR__ . '/assets/css/map-color.css') ?: 0),
     (int) (@filemtime(__DIR__ . '/assets/js/experience.js') ?: 0),
+    (int) (@filemtime(__DIR__ . '/assets/js/basemap.js') ?: 0),
     (int) (@filemtime(__DIR__ . '/data/location-content.json') ?: 0),
     (int) (@filemtime(__DIR__ . '/data/modes.json') ?: 0)
 );
@@ -51,6 +53,7 @@ $experienceVersion = (string) max(
 <link rel="stylesheet" href="/assets/css/basemap.css?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>">
 <?php if ($page === 'map'): ?>
 <link rel="stylesheet" href="/assets/css/experience.css?v=<?= htmlspecialchars($experienceVersion, ENT_QUOTES) ?>">
+<link rel="stylesheet" href="/assets/css/map-color.css?v=<?= htmlspecialchars($experienceVersion, ENT_QUOTES) ?>">
 <?php endif; ?>
 </head>
 <body data-page="<?= htmlspecialchars($page, ENT_QUOTES) ?>">
