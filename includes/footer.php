@@ -25,6 +25,7 @@ $basemapVersion = $page === 'map' ? ($experienceVersion ?? $assetVersion) : $ass
 <?php if ($page === 'map'): ?>
 <script src="/assets/js/experience.js?v=<?= htmlspecialchars($experienceVersion ?? $assetVersion, ENT_QUOTES) ?>"></script>
 <script src="/assets/js/url-state.js?v=<?= htmlspecialchars($experienceVersion ?? $assetVersion, ENT_QUOTES) ?>"></script>
+<script src="/assets/js/surface-fix.js?v=<?= htmlspecialchars($experienceVersion ?? $assetVersion, ENT_QUOTES) ?>"></script>
 <?php endif; ?>
 <?php if ($page === 'overlays'): ?>
 <script src="/assets/js/overlay-manager.js?v=<?= htmlspecialchars($assetVersion, ENT_QUOTES) ?>"></script>
