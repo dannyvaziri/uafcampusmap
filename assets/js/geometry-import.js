@@ -5,7 +5,7 @@
 
   const BUILDING_SOURCE = 'https://services.arcgis.com/f4rR7WnIfGBdVYFd/arcgis/rest/services/Building_Outlines_2023_Pictometry/FeatureServer/22/query';
   const CAMPUS_BBOX = {west:-147.8565,south:64.8485,east:-147.8095,north:64.8635};
-  const AUTO_SESSION_KEY = 'uaf-auto-footprints-run';
+  const AUTO_SESSION_KEY = 'uaf-auto-footprints-run-v2';
   const originalMap = L.map;
   const api = window.UAFGeometryImport = {map:null,running:false,lastResult:null};
 
@@ -49,27 +49,42 @@
   const exact = row => finite(row?.latitude) && finite(row?.longitude);
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  function ring(feature) {
-    const geometry = feature?.geometry;
-    if (!geometry) return null;
-    if (geometry.type === 'Polygon') return Array.isArray(geometry.coordinates?.[0]) ? geometry.coordinates[0] : null;
-    if (geometry.type === 'MultiPolygon') {
-      const polygons = geometry.coordinates || [];
-      let best = null;
-      polygons.forEach(poly => {
-        const candidate = poly?.[0];
-        if (Array.isArray(candidate) && (!best || candidate.length > best.length)) best = candidate;
-      });
-      return best;
-    }
-    return null;
-  }
-
   function polygonArea(coords) {
     if (!Array.isArray(coords) || coords.length < 4) return 0;
     let area = 0;
     for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) area += Number(coords[j][0]) * Number(coords[i][1]) - Number(coords[i][0]) * Number(coords[j][1]);
     return Math.abs(area / 2);
+  }
+
+  function bestRing(rings) {
+    if (!Array.isArray(rings)) return null;
+    let best = null;
+    let bestArea = 0;
+    for (const candidate of rings) {
+      if (!Array.isArray(candidate) || candidate.length < 4) continue;
+      const area = polygonArea(candidate);
+      if (area > bestArea) {best = candidate;bestArea = area;}
+    }
+    return best;
+  }
+
+  function ring(feature) {
+    const geometry = feature?.geometry;
+    if (!geometry) return null;
+
+    // Native ArcGIS FeatureServer JSON: { geometry: { rings: [[[x,y],...]] } }
+    if (Array.isArray(geometry.rings)) return bestRing(geometry.rings);
+
+    // GeoJSON support is retained so this importer can also accept future sources.
+    if (geometry.type === 'Polygon') return bestRing(geometry.coordinates || []);
+    if (geometry.type === 'MultiPolygon') {
+      const candidates = [];
+      for (const polygon of geometry.coordinates || []) {
+        if (Array.isArray(polygon?.[0])) candidates.push(polygon[0]);
+      }
+      return bestRing(candidates);
+    }
+    return null;
   }
 
   function pointInPolygon(lng, lat, coords) {
@@ -118,13 +133,16 @@
       spatialRel:'esriSpatialRelIntersects',
       outSR:'4326',
       returnGeometry:'true',
-      outFields:'*',
-      f:'geojson'
+      outFields:'OBJECTID',
+      resultRecordCount:'2000',
+      geometryPrecision:'7',
+      f:'json'
     });
-    const response = await fetch(BUILDING_SOURCE + '?' + params.toString(), {headers:{Accept:'application/geo+json,application/json'}});
+    const response = await fetch(BUILDING_SOURCE + '?' + params.toString(), {headers:{Accept:'application/json'}});
     if (!response.ok) throw new Error('Building footprint source returned ' + response.status + '.');
     const data = await response.json();
-    if (!Array.isArray(data.features)) throw new Error('Building footprint source did not return GeoJSON features.');
+    if (data?.error) throw new Error(data.error.message || 'The Fairbanks building service returned an error.');
+    if (!Array.isArray(data.features)) throw new Error('Building footprint source did not return polygon features.');
     return data.features.filter(feature => {
       const r = ring(feature);
       return Array.isArray(r) && r.length >= 4 && polygonArea(r) > 0;
@@ -135,20 +153,31 @@
     const rows = buildingRows().filter(exact);
     const used = new Set();
     const matches = [];
-    const candidates = features.map((feature, index) => ({feature,index,ring:ring(feature),area:polygonArea(ring(feature))}));
+    const candidates = features.map((feature, index) => ({feature,index,ring:ring(feature),area:polygonArea(ring(feature))})).filter(candidate => candidate.ring);
 
+    // First pass: a UAF coordinate physically inside a building polygon is a strong match.
     rows.forEach(row => {
       const lng = Number(row.longitude), lat = Number(row.latitude);
-      const ranked = candidates.filter(candidate => !used.has(candidate.index)).map(candidate => ({...candidate,distance:distanceToRing(lng,lat,candidate.ring)})).filter(candidate => candidate.distance <= 38).sort((a,b) => {
-        if (a.distance === 0 && b.distance !== 0) return -1;
-        if (b.distance === 0 && a.distance !== 0) return 1;
+      const containing = candidates.filter(candidate => !used.has(candidate.index) && pointInPolygon(lng,lat,candidate.ring)).sort((a,b) => a.area - b.area);
+      const best = containing[0];
+      if (!best) return;
+      used.add(best.index);
+      matches.push({record:row,feature:best.feature,ring:best.ring,distance:0,confidence:'inside'});
+    });
+
+    const matchedIds = new Set(matches.map(match => match.record.id));
+
+    // Second pass: accept a nearby footprint when the stored point is slightly outside the roof.
+    rows.filter(row => !matchedIds.has(row.id)).forEach(row => {
+      const lng = Number(row.longitude), lat = Number(row.latitude);
+      const ranked = candidates.filter(candidate => !used.has(candidate.index)).map(candidate => ({...candidate,distance:distanceToRing(lng,lat,candidate.ring)})).filter(candidate => candidate.distance <= 60).sort((a,b) => {
         if (a.distance === b.distance) return a.area - b.area;
         return a.distance - b.distance;
       });
       const best = ranked[0];
       if (!best) return;
       used.add(best.index);
-      matches.push({record:row,feature:best.feature,ring:best.ring,distance:best.distance});
+      matches.push({record:row,feature:best.feature,ring:best.ring,distance:best.distance,confidence:'nearby'});
     });
     return matches;
   }
@@ -159,7 +188,7 @@
     if (!toolbar) return false;
     const holder = document.createElement('div');
     holder.className = 'overlay-auto-generate';
-    holder.innerHTML = '<button type="button" id="auto-generate-building-outlines" class="primary-admin">Auto-generate missing building outlines</button><small>Uses Fairbanks North Star Borough 2023 building-outline data as editable draft geometry. Existing UAF outlines are preserved. Review before publishing.</small>';
+    holder.innerHTML = '<button type="button" id="auto-generate-building-outlines" class="primary-admin">Auto-generate missing building outlines</button><small>Uses Fairbanks North Star Borough 2023 vector building outlines as editable draft geometry. Existing UAF outlines are preserved. Review the matches before publishing.</small>';
     toolbar.insertAdjacentElement('afterend', holder);
     holder.querySelector('button').addEventListener('click', () => importBuildings(false));
     return true;
@@ -198,12 +227,12 @@
     const row = document.querySelector('[data-overlay-id="' + escaped + '"]');
     if (!row) return false;
     row.click();
-    await sleep(8);
+    await sleep(12);
     const latlngs = match.ring.map(pair => [Number(pair[1]),Number(pair[0])]);
     if (latlngs.length < 4) return false;
     const layer = L.polygon(latlngs);
     map.fire(L.Draw.Event.CREATED,{layer,layerType:'polygon'});
-    await sleep(8);
+    await sleep(12);
     return true;
   }
 
@@ -215,7 +244,7 @@
     if (button) button.disabled = true;
     try {
       clickBuildingScope();
-      status('Loading current Fairbanks building footprints…');
+      status('Loading current Fairbanks vector building footprints…');
       const features = await fetchBuildingFootprints();
       const matches = matchBuildings(features);
       let added = 0, skipped = 0;
