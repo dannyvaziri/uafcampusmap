@@ -11,6 +11,24 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+$contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+if ($contentLength > 12 * 1024 * 1024) {
+    http_response_code(413);
+    echo json_encode(['ok' => false, 'error' => 'Maximum publish payload is 12 MB. Reduce PNG overlays or split the change.']);
+    exit;
+}
+
+$origin = trim((string) ($_SERVER['HTTP_ORIGIN'] ?? ''));
+if ($origin !== '') {
+    $requestHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    $originHost = strtolower((string) (parse_url($origin, PHP_URL_HOST) ?? ''));
+    if ($requestHost === '' || $originHost === '' || $originHost !== preg_replace('/:\\d+$/', '', $requestHost)) {
+        http_response_code(403);
+        echo json_encode(['ok' => false, 'error' => 'Cross-origin publishing is not allowed.']);
+        exit;
+    }
+}
+
 // This endpoint must sit behind Hostinger's Password Protect Directories
 // protection for /admin. Refuse to publish if Apache did not authenticate a user.
 $authenticatedUser = trim((string) ($_SERVER['REMOTE_USER'] ?? $_SERVER['PHP_AUTH_USER'] ?? ''));
