@@ -5,10 +5,12 @@
 
   const SOURCE = 'https://services.arcgis.com/f4rR7WnIfGBdVYFd/arcgis/rest/services/Building_Outlines_2023_Pictometry/FeatureServer/22/query';
   const BBOX = {west:-147.8565,south:64.8485,east:-147.8095,north:64.8635};
-  const api = window.UAFGeometryImport = {running:false,lastResult:null,ranAutomatically:false};
+  const api = window.UAFGeometryImport = {running:false,lastResult:null,ranAutomatically:false,runManual:null};
   let manager = null;
   let sourceCache = null;
   let sourceMode = '';
+  let runSequence = 0;
+  const activeControllers = new Set();
 
   const finite = value => value !== null && value !== '' && Number.isFinite(Number(value));
   const exact = row => finite(row?.latitude) && finite(row?.longitude);
@@ -105,12 +107,20 @@
       '</dl>' : '';
     const source = r?.sourceMode || sourceMode;
     const sourceText = source ? '<span class="overlay-import-source">Source path: ' + (source === 'hostinger-proxy' ? 'Hostinger proxy' : 'direct ArcGIS fallback') + '</span>' : '';
-    slot.innerHTML = '<section class="overlay-import-card"><div><strong>Automatic building outlines</strong><p id="overlay-import-status">' + (statusText || 'Ready to check the current FNSB building-footprint source.') + '</p>' + sourceText + '</div><button type="button" id="auto-generate-building-outlines" class="primary-admin" ' + (api.running ? 'disabled' : '') + '>Auto-generate missing building outlines</button>' + stats + '<small>Generated polygons are saved only to the browser draft and marked <strong>Needs review</strong>. Existing UAF outlines are never replaced automatically.</small></section>';
-    slot.querySelector('#auto-generate-building-outlines')?.addEventListener('click', () => run(false));
+    const buttonLabel = api.running ? 'Working… tap to restart' : 'Auto-generate missing building outlines';
+    slot.innerHTML = '<section class="overlay-import-card"><div><strong>Automatic building outlines</strong><p id="overlay-import-status">' + (statusText || 'Ready to check the current FNSB building-footprint source.') + '</p>' + sourceText + '</div><button type="button" id="auto-generate-building-outlines" class="primary-admin" aria-busy="' + (api.running ? 'true' : 'false') + '">' + buttonLabel + '</button>' + stats + '<small>Generated polygons are saved only to the browser draft and marked <strong>Needs review</strong>. Existing UAF outlines are never replaced automatically.</small></section>';
+  }
+
+  function cancelActive() {
+    for (const controller of activeControllers) {
+      try {controller.abort();} catch (error) {}
+    }
+    activeControllers.clear();
   }
 
   async function fetchJson(url, options, timeoutMs) {
     const controller = new AbortController();
+    activeControllers.add(controller);
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetch(url, {...(options || {}), signal:controller.signal, cache:'no-store'});
@@ -119,10 +129,11 @@
       if (!response.ok) throw new Error((data && data.error) || ('Request failed (' + response.status + ').'));
       return data;
     } catch (error) {
-      if (error?.name === 'AbortError') throw new Error('Request timed out after ' + Math.round(timeoutMs / 1000) + ' seconds.');
+      if (error?.name === 'AbortError') throw new Error('Request timed out or was restarted.');
       throw error;
     } finally {
       clearTimeout(timer);
+      activeControllers.delete(controller);
     }
   }
 
@@ -135,7 +146,7 @@
   }
 
   async function fetchViaProxy() {
-    const data = await fetchJson('/admin/footprints.php', {credentials:'same-origin', headers:{Accept:'application/json'}}, 9000);
+    const data = await fetchJson('/admin/footprints.php?ts=' + Date.now(), {credentials:'same-origin', headers:{Accept:'application/json'}}, 9000);
     if (!data?.ok) throw new Error(data?.error || 'Hostinger footprint proxy returned an invalid response.');
     const features = normalizeFeatures(data);
     if (!features.length) throw new Error('Hostinger footprint proxy returned no usable campus polygons.');
@@ -165,8 +176,9 @@
     return features;
   }
 
-  async function fetchSource() {
-    if (sourceCache) return sourceCache;
+  async function fetchSource(forceFresh) {
+    if (sourceCache && !forceFresh) return sourceCache;
+    if (forceFresh) sourceCache = null;
     let proxyError = null;
     try {
       sourceCache = await fetchViaProxy();
@@ -230,16 +242,28 @@
     return matches;
   }
 
-  async function run(automatic) {
-    if (!manager || api.running) return;
+  async function run(automatic, forceRestart) {
+    if (!manager) {
+      renderPanel('Importer is still initializing. Try again in a moment.');
+      return;
+    }
+    if (api.running && !forceRestart) return;
+    if (forceRestart) {
+      cancelActive();
+      sourceCache = null;
+      sourceMode = '';
+    }
+    const myRun = ++runSequence;
     api.running = true;
-    renderPanel('Loading current FNSB vector building footprints…');
-    manager.setStatus('Building auto-generation is running in the background. The rest of the editor remains usable.');
+    renderPanel(forceRestart ? 'Restarting building outline import now…' : 'Loading current FNSB vector building footprints…');
+    manager.setStatus('Building auto-generation is running. You can keep using the editor while it works.');
     try {
       const before = manager.getSummary();
-      const features = await fetchSource();
+      const features = await fetchSource(forceRestart);
+      if (myRun !== runSequence) return;
       renderPanel('Matching ' + features.length + ' source footprints to UAF building records…');
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise(resolve => setTimeout(resolve, 20));
+      if (myRun !== runSequence) return;
       const matches = matchBuildings(features);
       const imported = manager.bulkImportBuildingMatches(matches);
       const after = imported.summary || manager.getSummary();
@@ -260,16 +284,34 @@
       renderPanel(prefix + imported.added + ' missing building outline' + (imported.added === 1 ? ' was' : 's were') + ' added to the browser draft. Review generated polygons before publishing.', api.lastResult);
       manager.setStatus(prefix + imported.added + ' building outline' + (imported.added === 1 ? '' : 's') + ' added to the browser draft; ' + after.buildingsMissing + ' building record' + (after.buildingsMissing === 1 ? '' : 's') + ' still need geometry.');
     } catch (error) {
+      if (myRun !== runSequence) return;
       api.lastResult = null;
       sourceCache = null;
       sourceMode = '';
-      renderPanel('Importer unavailable: ' + (error.message || 'Unknown error') + '. The editor is still usable. Tap Auto-generate to retry.');
-      manager.setStatus('Automatic building import could not complete. The overlay editor remains usable.');
+      renderPanel('Importer error: ' + (error.message || 'Unknown error') + ' Tap the button to retry.');
+      manager.setStatus('Automatic building import could not complete. The exact error is shown in the importer panel.');
     } finally {
-      api.running = false;
-      renderPanel(document.getElementById('overlay-import-status')?.textContent || '', api.lastResult);
+      if (myRun === runSequence) {
+        api.running = false;
+        const status = document.getElementById('overlay-import-status')?.textContent || 'Ready to retry.';
+        renderPanel(status, api.lastResult);
+      }
     }
   }
+
+  api.runManual = function () {
+    run(false, true);
+  };
+
+  document.addEventListener('click', event => {
+    const button = event.target.closest && event.target.closest('#auto-generate-building-outlines');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    button.textContent = 'Starting…';
+    button.setAttribute('aria-busy', 'true');
+    api.runManual();
+  }, true);
 
   function connect(nextManager) {
     if (manager) return;
@@ -279,7 +321,7 @@
     renderPanel('Checking the building-footprint source in the background. Existing geometry will not be changed until matches are ready.');
     if (!api.ranAutomatically) {
       api.ranAutomatically = true;
-      setTimeout(() => run(true), 700);
+      setTimeout(() => run(true, false), 700);
     }
   }
 
