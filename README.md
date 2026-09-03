@@ -177,3 +177,9 @@ Formal institutional conformance still requires human keyboard, zoom/reflow, scr
 ## Repository checks
 
 GitHub Actions performs PHP syntax checks, JSON validation, vanilla-JavaScript syntax checks, route rendering smoke tests and runtime-structure checks. There is no npm install and no production build step.
+
+## Production readiness notes
+
+The public map, accessible text map, admin editor, overlay editor, and print center run as PHP 8.5 pages with vanilla JavaScript and Leaflet. Publishing is intentionally server-side: the browser sends drafts to `admin/publish.php`, and the GitHub credential is read from Hostinger environment/private configuration rather than stored in browser code.
+
+Before a client launch, the site owner must still provide authoritative building and parking geometry, confirm rights to all data and branding, configure protected access for `/admin`, restrict the ArcGIS service credential to the production domains, and test the final PDF on the client’s printer. The application now rejects cross-origin publish requests, oversized publish payloads, hidden dotfiles, and directory indexes.
