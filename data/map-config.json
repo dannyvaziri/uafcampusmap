@@ -64,7 +64,7 @@
     {
       "id": "custom-building-6108594",
       "official_name": "New building",
-      "common_name": "Planitarium",
+      "common_name": "Planetarium",
       "abbreviation": "",
       "category": "service",
       "address": "",
@@ -88,7 +88,7 @@
       "type": "Feature",
       "properties": {
         "id": "shape-1788315415210",
-        "name": "Planitarium",
+        "name": "Planetarium",
         "kind": "building-footprint",
         "visible": true,
         "stroke": "#236192",
