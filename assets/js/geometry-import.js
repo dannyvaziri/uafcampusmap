@@ -3,9 +3,12 @@
 
   if ((document.body.dataset.page || '') !== 'overlays') return;
 
+  const SOURCE = 'https://services.arcgis.com/f4rR7WnIfGBdVYFd/arcgis/rest/services/Building_Outlines_2023_Pictometry/FeatureServer/22/query';
+  const BBOX = {west:-147.8565,south:64.8485,east:-147.8095,north:64.8635};
   const api = window.UAFGeometryImport = {running:false,lastResult:null,ranAutomatically:false};
   let manager = null;
   let sourceCache = null;
+  let sourceMode = '';
 
   const finite = value => value !== null && value !== '' && Number.isFinite(Number(value));
   const exact = row => finite(row?.latitude) && finite(row?.longitude);
@@ -23,16 +26,25 @@
     if (!Array.isArray(rings)) return null;
     let best = null;
     let area = 0;
-    for (const ring of rings) {
-      if (!Array.isArray(ring) || ring.length < 4) continue;
-      const next = polygonArea(ring);
-      if (next > area) {best = ring;area = next;}
+    for (const candidate of rings) {
+      if (!Array.isArray(candidate) || candidate.length < 4) continue;
+      const next = polygonArea(candidate);
+      if (next > area) {best = candidate;area = next;}
     }
     return best;
   }
 
   function ring(feature) {
-    return bestRing(feature?.geometry?.rings || []);
+    const geometry = feature?.geometry;
+    if (!geometry) return null;
+    if (Array.isArray(geometry.rings)) return bestRing(geometry.rings);
+    if (geometry.type === 'Polygon') return bestRing(geometry.coordinates || []);
+    if (geometry.type === 'MultiPolygon') {
+      const rows = [];
+      for (const polygon of geometry.coordinates || []) if (Array.isArray(polygon?.[0])) rows.push(polygon[0]);
+      return bestRing(rows);
+    }
+    return null;
   }
 
   function pointInPolygon(lng, lat, coords) {
@@ -70,7 +82,14 @@
     return best;
   }
 
+  function promoteImporter() {
+    const slot = document.getElementById('overlay-importer-slot');
+    const summary = document.getElementById('overlay-summary');
+    if (slot && summary && slot.previousElementSibling !== summary) summary.insertAdjacentElement('afterend', slot);
+  }
+
   function renderPanel(statusText, result) {
+    promoteImporter();
     const slot = document.getElementById('overlay-importer-slot');
     if (!slot) return;
     const r = result || api.lastResult;
@@ -84,37 +103,88 @@
       '<div><dt>Needs review</dt><dd>' + r.needsReview + '</dd></div>' +
       '<div><dt>Still missing</dt><dd>' + r.remaining + '</dd></div>' +
       '</dl>' : '';
-    slot.innerHTML = '<section class="overlay-import-card"><div><strong>Automatic building outlines</strong><p id="overlay-import-status">' + (statusText || 'Ready to check the current FNSB building-footprint source.') + '</p></div><button type="button" id="auto-generate-building-outlines" class="primary-admin" ' + (api.running ? 'disabled' : '') + '>Auto-generate missing building outlines</button>' + stats + '<small>Generated polygons are saved only to the browser draft and marked <strong>Needs review</strong>. Existing UAF outlines are never replaced automatically.</small></section>';
+    const source = r?.sourceMode || sourceMode;
+    const sourceText = source ? '<span class="overlay-import-source">Source path: ' + (source === 'hostinger-proxy' ? 'Hostinger proxy' : 'direct ArcGIS fallback') + '</span>' : '';
+    slot.innerHTML = '<section class="overlay-import-card"><div><strong>Automatic building outlines</strong><p id="overlay-import-status">' + (statusText || 'Ready to check the current FNSB building-footprint source.') + '</p>' + sourceText + '</div><button type="button" id="auto-generate-building-outlines" class="primary-admin" ' + (api.running ? 'disabled' : '') + '>Auto-generate missing building outlines</button>' + stats + '<small>Generated polygons are saved only to the browser draft and marked <strong>Needs review</strong>. Existing UAF outlines are never replaced automatically.</small></section>';
     slot.querySelector('#auto-generate-building-outlines')?.addEventListener('click', () => run(false));
   }
 
-  async function fetchSource() {
-    if (sourceCache) return sourceCache;
+  async function fetchJson(url, options, timeoutMs) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 11000);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const response = await fetch('/admin/footprints.php', {credentials:'same-origin',headers:{Accept:'application/json'},signal:controller.signal,cache:'no-store'});
+      const response = await fetch(url, {...(options || {}), signal:controller.signal, cache:'no-store'});
       let data = null;
       try {data = await response.json();} catch (error) {}
-      if (!response.ok || !data?.ok || !Array.isArray(data.features)) {
-        throw new Error(data?.error || ('Building-footprint lookup failed (' + response.status + ').'));
-      }
-      sourceCache = data.features.filter(feature => {
-        const r = ring(feature);
-        return Array.isArray(r) && r.length >= 4 && polygonArea(r) > 0;
-      });
-      if (!sourceCache.length) throw new Error('The footprint source returned no usable campus polygons.');
-      return sourceCache;
+      if (!response.ok) throw new Error((data && data.error) || ('Request failed (' + response.status + ').'));
+      return data;
     } catch (error) {
-      if (error?.name === 'AbortError') throw new Error('The building-footprint lookup timed out after 11 seconds. The editor is still usable; retry when the source is available.');
+      if (error?.name === 'AbortError') throw new Error('Request timed out after ' + Math.round(timeoutMs / 1000) + ' seconds.');
       throw error;
     } finally {
       clearTimeout(timer);
     }
   }
 
+  function normalizeFeatures(data) {
+    if (!Array.isArray(data?.features)) return [];
+    return data.features.filter(feature => {
+      const r = ring(feature);
+      return Array.isArray(r) && r.length >= 4 && polygonArea(r) > 0;
+    });
+  }
+
+  async function fetchViaProxy() {
+    const data = await fetchJson('/admin/footprints.php', {credentials:'same-origin', headers:{Accept:'application/json'}}, 9000);
+    if (!data?.ok) throw new Error(data?.error || 'Hostinger footprint proxy returned an invalid response.');
+    const features = normalizeFeatures(data);
+    if (!features.length) throw new Error('Hostinger footprint proxy returned no usable campus polygons.');
+    sourceMode = 'hostinger-proxy';
+    return features;
+  }
+
+  async function fetchDirect() {
+    const params = new URLSearchParams({
+      where:'1=1',
+      geometry:[BBOX.west,BBOX.south,BBOX.east,BBOX.north].join(','),
+      geometryType:'esriGeometryEnvelope',
+      inSR:'4326',
+      spatialRel:'esriSpatialRelIntersects',
+      outSR:'4326',
+      returnGeometry:'true',
+      outFields:'OBJECTID',
+      resultRecordCount:'2000',
+      geometryPrecision:'7',
+      f:'json'
+    });
+    const data = await fetchJson(SOURCE + '?' + params.toString(), {credentials:'omit', mode:'cors', headers:{Accept:'application/json'}}, 12000);
+    if (data?.error) throw new Error(data.error.message || 'ArcGIS returned an error.');
+    const features = normalizeFeatures(data);
+    if (!features.length) throw new Error('ArcGIS returned no usable campus polygons.');
+    sourceMode = 'direct-arcgis';
+    return features;
+  }
+
+  async function fetchSource() {
+    if (sourceCache) return sourceCache;
+    let proxyError = null;
+    try {
+      sourceCache = await fetchViaProxy();
+      return sourceCache;
+    } catch (error) {
+      proxyError = error;
+      renderPanel('Hostinger footprint lookup was unavailable. Trying the ArcGIS source directly…');
+    }
+    try {
+      sourceCache = await fetchDirect();
+      return sourceCache;
+    } catch (directError) {
+      throw new Error('Both footprint sources failed. Hostinger: ' + (proxyError?.message || 'unknown error') + ' Direct ArcGIS: ' + (directError?.message || 'unknown error'));
+    }
+  }
+
   function candidateRows(features) {
-    return features.map((feature,index) => ({feature,index,ring:ring(feature),area:polygonArea(ring(feature)),sourceObjectId:String(feature?.attributes?.OBJECTID || '')})).filter(row => row.ring);
+    return features.map((feature,index) => ({feature,index,ring:ring(feature),area:polygonArea(ring(feature)),sourceObjectId:String(feature?.attributes?.OBJECTID || feature?.properties?.OBJECTID || '')})).filter(row => row.ring);
   }
 
   function reserveExisting(candidates, rows) {
@@ -163,12 +233,12 @@
   async function run(automatic) {
     if (!manager || api.running) return;
     api.running = true;
-    renderPanel('Loading the current FNSB vector building footprints…');
+    renderPanel('Loading current FNSB vector building footprints…');
     manager.setStatus('Building auto-generation is running in the background. The rest of the editor remains usable.');
     try {
       const before = manager.getSummary();
       const features = await fetchSource();
-      renderPanel('Matching source footprints to UAF building records…');
+      renderPanel('Matching ' + features.length + ' source footprints to UAF building records…');
       await new Promise(resolve => setTimeout(resolve, 0));
       const matches = matchBuildings(features);
       const imported = manager.bulkImportBuildingMatches(matches);
@@ -183,14 +253,17 @@
         invalid:imported.invalid,
         unmatched:Math.max(0,before.buildingsMissing-matches.length),
         needsReview:after.buildingsReview,
-        remaining:after.buildingsMissing
+        remaining:after.buildingsMissing,
+        sourceMode
       };
       const prefix = automatic ? 'Automatic check complete. ' : 'Auto-generation complete. ';
       renderPanel(prefix + imported.added + ' missing building outline' + (imported.added === 1 ? ' was' : 's were') + ' added to the browser draft. Review generated polygons before publishing.', api.lastResult);
       manager.setStatus(prefix + imported.added + ' building outline' + (imported.added === 1 ? '' : 's') + ' added to the browser draft; ' + after.buildingsMissing + ' building record' + (after.buildingsMissing === 1 ? '' : 's') + ' still need geometry.');
     } catch (error) {
       api.lastResult = null;
-      renderPanel('Importer unavailable: ' + (error.message || 'Unknown error') + ' You can still select, draw, edit, save drafts, and publish existing geometry.');
+      sourceCache = null;
+      sourceMode = '';
+      renderPanel('Importer unavailable: ' + (error.message || 'Unknown error') + '. The editor is still usable. Tap Auto-generate to retry.');
       manager.setStatus('Automatic building import could not complete. The overlay editor remains usable.');
     } finally {
       api.running = false;
@@ -202,10 +275,11 @@
     if (manager) return;
     manager = nextManager || window.UAFOverlayManager;
     if (!manager) return;
+    promoteImporter();
     renderPanel('Checking the building-footprint source in the background. Existing geometry will not be changed until matches are ready.');
     if (!api.ranAutomatically) {
       api.ranAutomatically = true;
-      setTimeout(() => run(true), 900);
+      setTimeout(() => run(true), 700);
     }
   }
 
