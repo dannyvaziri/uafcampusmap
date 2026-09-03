@@ -8,14 +8,14 @@
   const states = new WeakMap();
   const imageryPattern = /ibasemaps-api\.arcgis\.com\/arcgis\/rest\/services\/World_Imagery\/MapServer\/tile/i;
   const referencePattern = /services\.arcgisonline\.com\/ArcGIS\/rest\/services\/Reference\/(World_Transportation|World_Boundaries_and_Places)\/MapServer\/tile/i;
-  const streetUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+  const mapUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}';
   const fallbackUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
   function createNormalLayer() {
-    return originalTileLayer(streetUrl, {
+    return originalTileLayer(mapUrl, {
       maxZoom: 19,
       crossOrigin: true,
-      attribution: 'Basemap © Esri, HERE, Garmin, USGS, NGA, EPA, USDA, NPS'
+      attribution: 'Basemap © Esri, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, NPS'
     });
   }
 
