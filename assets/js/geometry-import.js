@@ -1,90 +1,38 @@
 (function () {
   'use strict';
 
-  if ((document.body.dataset.page || '') !== 'overlays' || !window.L) return;
+  if ((document.body.dataset.page || '') !== 'overlays') return;
 
-  const BUILDING_SOURCE = 'https://services.arcgis.com/f4rR7WnIfGBdVYFd/arcgis/rest/services/Building_Outlines_2023_Pictometry/FeatureServer/22/query';
-  const CAMPUS_BBOX = {west:-147.8565,south:64.8485,east:-147.8095,north:64.8635};
-  const AUTO_SESSION_KEY = 'uaf-auto-footprints-run-v2';
-  const originalMap = L.map;
-  const api = window.UAFGeometryImport = {map:null,running:false,lastResult:null};
-
-  L.map = function () {
-    const map = originalMap.apply(L, arguments);
-    const target = arguments[0];
-    const id = typeof target === 'string' ? target : target?.id;
-    if (id === 'overlay-editor-map') api.map = map;
-    return map;
-  };
-  Object.keys(originalMap).forEach(key => {try {L.map[key] = originalMap[key];} catch (error) {}});
-
-  function read(id, fallback) {
-    try {
-      const node = document.getElementById(id);
-      return node ? JSON.parse(node.textContent || '') : fallback;
-    } catch (error) {return fallback;}
-  }
-
-  function buildingRows() {
-    const base = read('uaf-buildings', []);
-    const cfg = read('uaf-config', {});
-    const overrides = cfg.buildingOverrides || {};
-    const custom = Array.isArray(cfg.customBuildings) ? cfg.customBuildings : [];
-    const rows = base.map(row => ({...row,...(overrides[row.id] || {})}));
-    const ids = new Set(rows.map(row => row.id));
-    custom.forEach(row => {
-      if (!row?.id) return;
-      const merged = {...row,...(overrides[row.id] || {})};
-      if (ids.has(row.id)) {
-        const i = rows.findIndex(item => item.id === row.id);
-        rows[i] = {...rows[i],...merged};
-      } else {
-        rows.push(merged);ids.add(row.id);
-      }
-    });
-    return rows;
-  }
+  const api = window.UAFGeometryImport = {running:false,lastResult:null,ranAutomatically:false};
+  let manager = null;
+  let sourceCache = null;
 
   const finite = value => value !== null && value !== '' && Number.isFinite(Number(value));
   const exact = row => finite(row?.latitude) && finite(row?.longitude);
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
   function polygonArea(coords) {
     if (!Array.isArray(coords) || coords.length < 4) return 0;
     let area = 0;
-    for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) area += Number(coords[j][0]) * Number(coords[i][1]) - Number(coords[i][0]) * Number(coords[j][1]);
+    for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+      area += Number(coords[j][0]) * Number(coords[i][1]) - Number(coords[i][0]) * Number(coords[j][1]);
+    }
     return Math.abs(area / 2);
   }
 
   function bestRing(rings) {
     if (!Array.isArray(rings)) return null;
     let best = null;
-    let bestArea = 0;
-    for (const candidate of rings) {
-      if (!Array.isArray(candidate) || candidate.length < 4) continue;
-      const area = polygonArea(candidate);
-      if (area > bestArea) {best = candidate;bestArea = area;}
+    let area = 0;
+    for (const ring of rings) {
+      if (!Array.isArray(ring) || ring.length < 4) continue;
+      const next = polygonArea(ring);
+      if (next > area) {best = ring;area = next;}
     }
     return best;
   }
 
   function ring(feature) {
-    const geometry = feature?.geometry;
-    if (!geometry) return null;
-
-    // Native ArcGIS FeatureServer JSON: { geometry: { rings: [[[x,y],...]] } }
-    if (Array.isArray(geometry.rings)) return bestRing(geometry.rings);
-
-    // GeoJSON support is retained so this importer can also accept future sources.
-    if (geometry.type === 'Polygon') return bestRing(geometry.coordinates || []);
-    if (geometry.type === 'MultiPolygon') {
-      const candidates = [];
-      for (const polygon of geometry.coordinates || []) {
-        if (Array.isArray(polygon?.[0])) candidates.push(polygon[0]);
-      }
-      return bestRing(candidates);
-    }
-    return null;
+    return bestRing(feature?.geometry?.rings || []);
   }
 
   function pointInPolygon(lng, lat, coords) {
@@ -100,9 +48,7 @@
   }
 
   function xy(lng, lat, originLat) {
-    const metersPerDegLat = 111320;
-    const metersPerDegLng = 111320 * Math.cos(originLat * Math.PI / 180);
-    return [lng * metersPerDegLng, lat * metersPerDegLat];
+    return [lng * 111320 * Math.cos(originLat * Math.PI / 180), lat * 111320];
   }
 
   function segmentDistance(px, py, ax, ay, bx, by) {
@@ -124,153 +70,145 @@
     return best;
   }
 
-  async function fetchBuildingFootprints() {
-    const params = new URLSearchParams({
-      where:'1=1',
-      geometry:[CAMPUS_BBOX.west,CAMPUS_BBOX.south,CAMPUS_BBOX.east,CAMPUS_BBOX.north].join(','),
-      geometryType:'esriGeometryEnvelope',
-      inSR:'4326',
-      spatialRel:'esriSpatialRelIntersects',
-      outSR:'4326',
-      returnGeometry:'true',
-      outFields:'OBJECTID',
-      resultRecordCount:'2000',
-      geometryPrecision:'7',
-      f:'json'
-    });
-    const response = await fetch(BUILDING_SOURCE + '?' + params.toString(), {headers:{Accept:'application/json'}});
-    if (!response.ok) throw new Error('Building footprint source returned ' + response.status + '.');
-    const data = await response.json();
-    if (data?.error) throw new Error(data.error.message || 'The Fairbanks building service returned an error.');
-    if (!Array.isArray(data.features)) throw new Error('Building footprint source did not return polygon features.');
-    return data.features.filter(feature => {
-      const r = ring(feature);
-      return Array.isArray(r) && r.length >= 4 && polygonArea(r) > 0;
-    });
+  function renderPanel(statusText, result) {
+    const slot = document.getElementById('overlay-importer-slot');
+    if (!slot) return;
+    const r = result || api.lastResult;
+    const stats = r ? '<dl class="overlay-import-stats">' +
+      '<div><dt>UAF buildings</dt><dd>' + r.totalBuildings + '</dd></div>' +
+      '<div><dt>Already outlined</dt><dd>' + r.alreadyOutlined + '</dd></div>' +
+      '<div><dt>Source footprints</dt><dd>' + r.sourceFeatures + '</dd></div>' +
+      '<div><dt>Matched</dt><dd>' + r.matches + '</dd></div>' +
+      '<div><dt>Added to draft</dt><dd>' + r.added + '</dd></div>' +
+      '<div><dt>Unmatched</dt><dd>' + r.unmatched + '</dd></div>' +
+      '<div><dt>Needs review</dt><dd>' + r.needsReview + '</dd></div>' +
+      '<div><dt>Still missing</dt><dd>' + r.remaining + '</dd></div>' +
+      '</dl>' : '';
+    slot.innerHTML = '<section class="overlay-import-card"><div><strong>Automatic building outlines</strong><p id="overlay-import-status">' + (statusText || 'Ready to check the current FNSB building-footprint source.') + '</p></div><button type="button" id="auto-generate-building-outlines" class="primary-admin" ' + (api.running ? 'disabled' : '') + '>Auto-generate missing building outlines</button>' + stats + '<small>Generated polygons are saved only to the browser draft and marked <strong>Needs review</strong>. Existing UAF outlines are never replaced automatically.</small></section>';
+    slot.querySelector('#auto-generate-building-outlines')?.addEventListener('click', () => run(false));
+  }
+
+  async function fetchSource() {
+    if (sourceCache) return sourceCache;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 11000);
+    try {
+      const response = await fetch('/admin/footprints.php', {credentials:'same-origin',headers:{Accept:'application/json'},signal:controller.signal,cache:'no-store'});
+      let data = null;
+      try {data = await response.json();} catch (error) {}
+      if (!response.ok || !data?.ok || !Array.isArray(data.features)) {
+        throw new Error(data?.error || ('Building-footprint lookup failed (' + response.status + ').'));
+      }
+      sourceCache = data.features.filter(feature => {
+        const r = ring(feature);
+        return Array.isArray(r) && r.length >= 4 && polygonArea(r) > 0;
+      });
+      if (!sourceCache.length) throw new Error('The footprint source returned no usable campus polygons.');
+      return sourceCache;
+    } catch (error) {
+      if (error?.name === 'AbortError') throw new Error('The building-footprint lookup timed out after 11 seconds. The editor is still usable; retry when the source is available.');
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function candidateRows(features) {
+    return features.map((feature,index) => ({feature,index,ring:ring(feature),area:polygonArea(ring(feature)),sourceObjectId:String(feature?.attributes?.OBJECTID || '')})).filter(row => row.ring);
+  }
+
+  function reserveExisting(candidates, rows) {
+    const used = new Set();
+    const existing = rows.filter(row => exact(row) && manager.hasBuildingShape(row.id));
+    for (const row of existing) {
+      const lng = Number(row.longitude), lat = Number(row.latitude);
+      const containing = candidates.filter(candidate => !used.has(candidate.index) && pointInPolygon(lng,lat,candidate.ring)).sort((a,b) => a.area-b.area)[0];
+      if (containing) {used.add(containing.index);continue;}
+      const nearby = candidates.filter(candidate => !used.has(candidate.index)).map(candidate => ({...candidate,distance:distanceToRing(lng,lat,candidate.ring)})).filter(candidate => candidate.distance <= 15).sort((a,b) => a.distance-b.distance)[0];
+      if (nearby) used.add(nearby.index);
+    }
+    return used;
   }
 
   function matchBuildings(features) {
-    const rows = buildingRows().filter(exact);
-    const used = new Set();
+    const rows = manager.getBuildings().filter(exact);
+    const candidates = candidateRows(features);
+    const used = reserveExisting(candidates, rows);
     const matches = [];
-    const candidates = features.map((feature, index) => ({feature,index,ring:ring(feature),area:polygonArea(ring(feature))})).filter(candidate => candidate.ring);
+    const missing = rows.filter(row => !manager.hasBuildingShape(row.id));
 
-    // First pass: a UAF coordinate physically inside a building polygon is a strong match.
-    rows.forEach(row => {
+    for (const row of missing) {
       const lng = Number(row.longitude), lat = Number(row.latitude);
-      const containing = candidates.filter(candidate => !used.has(candidate.index) && pointInPolygon(lng,lat,candidate.ring)).sort((a,b) => a.area - b.area);
+      const containing = candidates.filter(candidate => !used.has(candidate.index) && pointInPolygon(lng,lat,candidate.ring)).sort((a,b) => a.area-b.area);
       const best = containing[0];
-      if (!best) return;
+      if (!best) continue;
       used.add(best.index);
-      matches.push({record:row,feature:best.feature,ring:best.ring,distance:0,confidence:'inside'});
-    });
+      matches.push({record:row,feature:best.feature,ring:best.ring,sourceObjectId:best.sourceObjectId,distance:0,confidence:'inside'});
+    }
 
-    const matchedIds = new Set(matches.map(match => match.record.id));
-
-    // Second pass: accept a nearby footprint when the stored point is slightly outside the roof.
-    rows.filter(row => !matchedIds.has(row.id)).forEach(row => {
+    const matchedIds = new Set(matches.map(item => item.record.id));
+    for (const row of missing.filter(item => !matchedIds.has(item.id))) {
       const lng = Number(row.longitude), lat = Number(row.latitude);
-      const ranked = candidates.filter(candidate => !used.has(candidate.index)).map(candidate => ({...candidate,distance:distanceToRing(lng,lat,candidate.ring)})).filter(candidate => candidate.distance <= 60).sort((a,b) => {
-        if (a.distance === b.distance) return a.area - b.area;
-        return a.distance - b.distance;
-      });
-      const best = ranked[0];
-      if (!best) return;
+      const ranked = candidates.filter(candidate => !used.has(candidate.index)).map(candidate => ({...candidate,distance:distanceToRing(lng,lat,candidate.ring)})).filter(candidate => candidate.distance <= 45).sort((a,b) => a.distance-b.distance || a.area-b.area);
+      const best = ranked[0], second = ranked[1];
+      if (!best) continue;
+      const separated = !second || second.distance - best.distance >= 8;
+      if (best.distance > 12 && !separated) continue;
       used.add(best.index);
-      matches.push({record:row,feature:best.feature,ring:best.ring,distance:best.distance,confidence:'nearby'});
-    });
+      matches.push({record:row,feature:best.feature,ring:best.ring,sourceObjectId:best.sourceObjectId,distance:best.distance,confidence:best.distance <= 12 ? 'nearby-high' : 'nearby'});
+    }
     return matches;
   }
 
-  function ensureImportUi() {
-    if (document.getElementById('auto-generate-building-outlines')) return true;
-    const toolbar = document.querySelector('.overlay-map-toolbar');
-    if (!toolbar) return false;
-    const holder = document.createElement('div');
-    holder.className = 'overlay-auto-generate';
-    holder.innerHTML = '<button type="button" id="auto-generate-building-outlines" class="primary-admin">Auto-generate missing building outlines</button><small>Uses Fairbanks North Star Borough 2023 vector building outlines as editable draft geometry. Existing UAF outlines are preserved. Review the matches before publishing.</small>';
-    toolbar.insertAdjacentElement('afterend', holder);
-    holder.querySelector('button').addEventListener('click', () => importBuildings(false));
-    return true;
-  }
-
-  function status(message) {
-    const node = document.getElementById('overlay-status');
-    if (node) node.textContent = message;
-  }
-
-  function clickBuildingScope() {
-    const button = document.querySelector('[data-scope="building"]');
-    if (button && !button.classList.contains('active')) button.click();
-    const filter = document.getElementById('overlay-status-filter');
-    if (filter && filter.value !== 'all') {
-      filter.value = 'all';
-      filter.dispatchEvent(new Event('change',{bubbles:true}));
-    }
-    const search = document.getElementById('overlay-search');
-    if (search && search.value) {
-      search.value = '';
-      search.dispatchEvent(new Event('input',{bubbles:true}));
-    }
-  }
-
-  function isNeedsOutline(id) {
-    const escaped = window.CSS?.escape ? CSS.escape(String(id)) : String(id).replace(/[^a-zA-Z0-9_-]/g,'\\$&');
-    const row = document.querySelector('[data-overlay-id="' + escaped + '"]');
-    return !!row?.querySelector('.overlay-state.needs');
-  }
-
-  async function addMatch(match) {
-    const map = api.map;
-    if (!map || !isNeedsOutline(match.record.id)) return false;
-    const escaped = window.CSS?.escape ? CSS.escape(String(match.record.id)) : String(match.record.id).replace(/[^a-zA-Z0-9_-]/g,'\\$&');
-    const row = document.querySelector('[data-overlay-id="' + escaped + '"]');
-    if (!row) return false;
-    row.click();
-    await sleep(12);
-    const latlngs = match.ring.map(pair => [Number(pair[1]),Number(pair[0])]);
-    if (latlngs.length < 4) return false;
-    const layer = L.polygon(latlngs);
-    map.fire(L.Draw.Event.CREATED,{layer,layerType:'polygon'});
-    await sleep(12);
-    return true;
-  }
-
-  async function importBuildings(automatic) {
-    if (api.running) return;
-    if (!api.map) {status('The editor map is still loading. Try again in a moment.');return;}
+  async function run(automatic) {
+    if (!manager || api.running) return;
     api.running = true;
-    const button = document.getElementById('auto-generate-building-outlines');
-    if (button) button.disabled = true;
+    renderPanel('Loading the current FNSB vector building footprints…');
+    manager.setStatus('Building auto-generation is running in the background. The rest of the editor remains usable.');
     try {
-      clickBuildingScope();
-      status('Loading current Fairbanks vector building footprints…');
-      const features = await fetchBuildingFootprints();
+      const before = manager.getSummary();
+      const features = await fetchSource();
+      renderPanel('Matching source footprints to UAF building records…');
+      await new Promise(resolve => setTimeout(resolve, 0));
       const matches = matchBuildings(features);
-      let added = 0, skipped = 0;
-      status('Matched ' + matches.length + ' UAF building records. Creating editable draft outlines…');
-      for (const match of matches) {
-        if (await addMatch(match)) added += 1; else skipped += 1;
-      }
-      api.lastResult = {sourceFeatures:features.length,matches:matches.length,added,skipped};
-      status((automatic ? 'Automatic footprint import complete. ' : '') + added + ' editable building outline' + (added === 1 ? '' : 's') + ' added to the draft from ' + features.length + ' source footprints. ' + skipped + ' already-mapped/unavailable records were left unchanged. Review the outlines, edit any vertices that need correction, then publish.');
-      const draft = document.getElementById('save-overlay-draft');
-      if (added && draft) draft.click();
+      const imported = manager.bulkImportBuildingMatches(matches);
+      const after = imported.summary || manager.getSummary();
+      api.lastResult = {
+        totalBuildings:after.buildingsTotal,
+        alreadyOutlined:before.buildingsOutlined,
+        sourceFeatures:features.length,
+        matches:matches.length,
+        added:imported.added,
+        skipped:imported.skipped,
+        invalid:imported.invalid,
+        unmatched:Math.max(0,before.buildingsMissing-matches.length),
+        needsReview:after.buildingsReview,
+        remaining:after.buildingsMissing
+      };
+      const prefix = automatic ? 'Automatic check complete. ' : 'Auto-generation complete. ';
+      renderPanel(prefix + imported.added + ' missing building outline' + (imported.added === 1 ? ' was' : 's were') + ' added to the browser draft. Review generated polygons before publishing.', api.lastResult);
+      manager.setStatus(prefix + imported.added + ' building outline' + (imported.added === 1 ? '' : 's') + ' added to the browser draft; ' + after.buildingsMissing + ' building record' + (after.buildingsMissing === 1 ? '' : 's') + ' still need geometry.');
     } catch (error) {
-      status('Automatic building outline import failed: ' + (error.message || 'Unknown error') + ' Existing map data was not removed.');
+      api.lastResult = null;
+      renderPanel('Importer unavailable: ' + (error.message || 'Unknown error') + ' You can still select, draw, edit, save drafts, and publish existing geometry.');
+      manager.setStatus('Automatic building import could not complete. The overlay editor remains usable.');
     } finally {
       api.running = false;
-      if (button) button.disabled = false;
+      renderPanel(document.getElementById('overlay-import-status')?.textContent || '', api.lastResult);
     }
   }
 
-  const observer = new MutationObserver(() => {
-    if (!ensureImportUi()) return;
-    if (api.map && !sessionStorage.getItem(AUTO_SESSION_KEY)) {
-      sessionStorage.setItem(AUTO_SESSION_KEY,'1');
-      setTimeout(() => importBuildings(true), 800);
+  function connect(nextManager) {
+    if (manager) return;
+    manager = nextManager || window.UAFOverlayManager;
+    if (!manager) return;
+    renderPanel('Checking the building-footprint source in the background. Existing geometry will not be changed until matches are ready.');
+    if (!api.ranAutomatically) {
+      api.ranAutomatically = true;
+      setTimeout(() => run(true), 900);
     }
-  });
-  observer.observe(document.documentElement,{childList:true,subtree:true});
-  ensureImportUi();
+  }
+
+  window.addEventListener('uaf:overlaymanagerready', event => connect(event.detail?.manager));
+  if (window.UAFOverlayManager) connect(window.UAFOverlayManager);
 })();
