@@ -330,7 +330,7 @@
     if (!map || !visual) return;
     visual.labels.clearLayers();
     const zoom = map.getZoom();
-    const threshold = zoom <= 15 ? 10 : zoom <= 16 ? 8 : 0;
+    const threshold = zoom <= 15 ? 10 : 0;
     const candidates = [];
     for (const rowRaw of getData().buildings) {
       const row = configBuilding(rowRaw.id) || rowRaw;
@@ -351,7 +351,8 @@
       const point = map.latLngToContainerPoint(item.latlng);
       const width = item.priority >= 9 ? 160 : 125, height = 34;
       const box = {x1:point.x-width/2,x2:point.x+width/2,y1:point.y-height/2,y2:point.y+height/2};
-      if (occupied.some(o => !(box.x2<o.x1 || box.x1>o.x2 || box.y2<o.y1 || box.y1>o.y2))) continue;
+      // Every mapped building receives a visible tag at campus detail zoom.
+      // Do not suppress lower-priority labels; users need the complete inventory.
       occupied.push(box);
       const label = item.row.short_name || item.row.common_name || item.row.official_name;
       const marker = L.marker(item.latlng, {pane:'uaf-labels',interactive:false,icon:L.divIcon({className:'uaf-building-label-wrap',html:'<span class="uaf-building-label priority-'+item.priority+'">'+esc(label)+'</span>',iconSize:[width,30],iconAnchor:[width/2,15]})});
